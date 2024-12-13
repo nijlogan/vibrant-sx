@@ -1,0 +1,349 @@
+%YAML 1.2
+---
+
+# This syntax is built off of the C syntax
+
+name: ph3sx
+scope: source.dnh
+
+file_extensions:
+  - dnh
+
+first_line_match: |-
+  (?xi:
+    ^ \s* // .*? -\*- .*? \bc\b(?![#+]) .*? -\*-  # editorconfig
+  )
+
+variables:
+  # numbers
+  dec_exponent: '(?:[eE][-+]?\d*)'
+  hex_exponent: '(?:[pP][-+]?\d*)'
+  hex_suffix: '[g-zG-Z_][[:alnum:]_]*'
+  oct_suffix: '[8-9a-zA-Z_][[:alnum:]_]*'
+  bin_suffix: '[2-9a-zA-Z_][[:alnum:]_]*'
+  dec_suffix: '[a-zA-Z_][[:alnum:]_]*'
+  float_suffix: '[if]'
+  integer_suffix: '[i]'
+
+  # words
+  identifier: \b[[:alpha:]_][[:alnum:]_]*\b # upper and lowercase
+  file_headers: 'ScriptVersion|TouhouDanmakufu|Title|Text|Image|Player|ID|ReplayName|System|include|if|ifdef|ifndef|elif|else|endif'
+  data_files: 'UserShotData|UserItemData'
+  data_files_blocks: 'AnimationData|ShotData|ItemData'
+  data_files_attributes: 'id|rect|alpha|fixed_angle|angular_velocity|animation_data|collision|shot_image|delay_color|delay_rect|delay_id|delay_render|item_image|type|value|out'
+  control_keywords: 'case|others|do|else|for|each|in|ref|ascent|descent|loop|if|alternative|while|times'
+  scope_keywords: 'return|continue|break'
+  time_keywords: 'yield|wait'
+  basic_types: 'bool|char|float|string|int|var|let|const|void'
+  block_headers: 'Loading|Initialize|Event|MainLoop|Finalize'
+  block_functions: 'function|func'
+  block_types: 'local|task|sub|async|{{block_functions}}'
+
+  engine_constants: 'ALIGNMENT_BOTTOM|ALIGNMENT_CENTER|ALIGNMENT_LEFT|ALIGNMENT_RIGHT|ALIGNMENT_TOP|BLEND_ADD_ARGB|BLEND_ADD_RGB|BLEND_ALPHA|BLEND_ALPHA_INV|BLEND_INV_DESTRGB|BLEND_MULTIPLY|BLEND_NONE|BLEND_SHADOW|BLEND_SUBTRACT|BORDER_FULL|BORDER_NONE|BORDER_SHADOW|CAMERA_LOOKAT|CAMERA_NORMAL|CHARSET_ANSI|CHARSET_ARABIC|CHARSET_CHINESEBIG5|CHARSET_DEFAULT|CHARSET_HANGUL|CHARSET_HEBREW|CHARSET_JOHAB|CHARSET_SHIFTJIS|CHARSET_THAI|CHARSET_TURKISH|CHARSET_VIETNAMESE|CODE_ACP|CODE_UTF16BE|CODE_UTF16LE|CODE_UTF8|COLOR_PERMUTE_A|COLOR_PERMUTE_ARGB|COLOR_PERMUTE_B|COLOR_PERMUTE_BGR|COLOR_PERMUTE_BGRA|COLOR_PERMUTE_G|COLOR_PERMUTE_R|COLOR_PERMUTE_RGB|COLOR_PERMUTE_RGBA|CULL_CCW|CULL_CW|CULL_NONE|DELAY_DEFAULT|DELAY_LERP|ENDIAN_BIG|ENDIAN_LITTLE|EV_CANCEL_ITEM|EV_COLLECT_ITEM|EV_DELETE_SHOT_FADE|EV_DELETE_SHOT_IMMEDIATE|EV_DELETE_SHOT_PLAYER|EV_DELETE_SHOT_TO_ITEM|EV_END_BOSS_SPELL|EV_END_BOSS_STEP|EV_GAIN_SPELL|EV_GET_ITEM|EV_GRAZE|EV_HIT|EV_PAUSE_ENTER|EV_PAUSE_LEAVE|EV_PLAYER_REBIRTH|EV_PLAYER_SHOOTDOWN|EV_PLAYER_SPELL|EV_REQUEST_IS_DURABLE_SPELL|EV_REQUEST_IS_LAST_SPELL|EV_REQUEST_IS_SPELL|EV_REQUEST_LIFE|EV_REQUEST_REPLAY_TARGET_COMMON_AREA|EV_REQUEST_REQUIRE_ALL_DOWN|EV_REQUEST_SPELL|EV_REQUEST_SPELL_SCORE|EV_REQUEST_TIMER|EV_START_BOSS_SPELL|EV_START_BOSS_STEP|EV_TIMEOUT|EV_USER|EV_USER_COUNT|EV_USER_PACKAGE|EV_USER_PLAYER|EV_USER_STAGE|EV_USER_SYSTEM|FILTER_ANISOTROPIC|FILTER_LINEAR|FILTER_NONE|FILTER_POINT|ID_INVALID|IFF_BMP|IFF_DDS|IFF_JPG|IFF_PNG|IFF_PPM|IFF_TGA|INFO_ACTIVE_STEP_LIFE_COUNT|INFO_ACTIVE_STEP_LIFE_RATE_LIST|INFO_ACTIVE_STEP_TOTAL_LIFE|INFO_ACTIVE_STEP_TOTAL_MAX_LIFE|INFO_AVG_BYTE_PER_SEC|INFO_BIT_PER_SAMPLE|INFO_BLEND|INFO_BLOCK_ALIGN|INFO_CHANNEL|INFO_COLLISION|INFO_COLLISION_LIST|INFO_CURRENT_LIFE|INFO_CURRENT_LIFE_MAX|INFO_DAMAGE_RATE_SHOT|INFO_DAMAGE_RATE_SPELL|INFO_DELAY_COLOR|INFO_EXISTS|INFO_FORMAT|INFO_IS_DURABLE_SPELL|INFO_IS_FIXED_ANGLE|INFO_IS_LAST_SPELL|INFO_IS_LAST_STEP|INFO_IS_SPELL|INFO_ITEM_MOVE_TYPE|INFO_ITEM_SCORE|INFO_ITEM_TYPE|INFO_LENGTH|INFO_LENGTH_SAMPLE|INFO_LIFE|INFO_ORGTIMERF|INFO_PATH|INFO_PLAYER_SHOOTDOWN_COUNT|INFO_PLAYER_SPELL_COUNT|INFO_POSITION|INFO_POSITION_SAMPLE|INFO_RECT|INFO_REMAIN_STEP_COUNT|INFO_SAMPLE_RATE|INFO_SCRIPT_ID|INFO_SCRIPT_IMAGE|INFO_SCRIPT_PATH|INFO_SCRIPT_REPLAY_NAME|INFO_SCRIPT_TEXT|INFO_SCRIPT_TYPE|INFO_SHOT_HIT_COUNT|INFO_SPELL_SCORE|INFO_TIMER|INFO_TIMERF|ITEM_1UP|ITEM_1UP_S|ITEM_MOVE_DOWN|ITEM_MOVE_SCORE|ITEM_MOVE_TOPLAYER|ITEM_POINT|ITEM_POINT_S|ITEM_POWER|ITEM_POWER_S|ITEM_SPELL|ITEM_SPELL_S|ITEM_USER|KEY_0|KEY_1|KEY_2|KEY_3|KEY_4|KEY_5|KEY_6|KEY_7|KEY_8|KEY_9|KEY_A|KEY_ADD|KEY_APOSTROPHE|KEY_APPS|KEY_AT|KEY_AX|KEY_B|KEY_BACK|KEY_BACKSLASH|KEY_C|KEY_CAPITAL|KEY_CIRCUMFLEX|KEY_COLON|KEY_COMMA|KEY_CONVERT|KEY_D|KEY_DECIMAL|KEY_DELETE|KEY_DIVIDE|KEY_DOWN|KEY_E|KEY_END|KEY_EQUALS|KEY_ESCAPE|KEY_F|KEY_F1|KEY_F10|KEY_F11|KEY_F12|KEY_F13|KEY_F14|KEY_F15|KEY_F2|KEY_F3|KEY_F4|KEY_F5|KEY_F6|KEY_F7|KEY_F8|KEY_F9|KEY_FREE|KEY_G|KEY_GRAVE|KEY_H|KEY_HOLD|KEY_HOME|KEY_I|KEY_INSERT|KEY_INVALID|KEY_J|KEY_K|KEY_KANA|KEY_KANJI|KEY_L|KEY_LBRACKET|KEY_LCONTROL|KEY_LEFT|KEY_LMENU|KEY_LSHIFT|KEY_LWIN|KEY_M|KEY_MINUS|KEY_MULTIPLY|KEY_N|KEY_NEXT|KEY_NOCONVERT|KEY_NUMLOCK|KEY_NUMPAD0|KEY_NUMPAD1|KEY_NUMPAD2|KEY_NUMPAD3|KEY_NUMPAD4|KEY_NUMPAD5|KEY_NUMPAD6|KEY_NUMPAD7|KEY_NUMPAD8|KEY_NUMPAD9|KEY_NUMPADCOMMA|KEY_NUMPADENTER|KEY_NUMPADEQUALS|KEY_O|KEY_P|KEY_PAUSE|KEY_PERIOD|KEY_POWER|KEY_PRIOR|KEY_PULL|KEY_PUSH|KEY_Q|KEY_R|KEY_RBRACKET|KEY_RCONTROL|KEY_RETURN|KEY_RIGHT|KEY_RMENU|KEY_RSHIFT|KEY_RWIN|KEY_S|KEY_SCROLL|KEY_SEMICOLON|KEY_SLASH|KEY_SLEEP|KEY_SPACE|KEY_STOP|KEY_SUBTRACT|KEY_SYSRQ|KEY_T|KEY_TAB|KEY_U|KEY_UNDERLINE|KEY_UNLABELED|KEY_UP|KEY_V|KEY_W|KEY_X|KEY_Y|KEY_YEN|KEY_Z|LERP_ACCELERATE|LERP_DECELERATE|LERP_LINEAR|LERP_SMOOTH|LERP_SMOOTHER|MOUSE_LEFT|MOUSE_MIDDLE|MOUSE_RIGHT|M_1_PHI|M_1_PI|M_1_SQRTPI|M_2_PI|M_2_SQRTPI|M_E|M_LN10|M_LN2|M_LOG10E|M_LOG2E|M_PHI|M_PI|M_PI_2|M_PI_4|M_PI_X2|M_PI_X4|M_SQRT2|M_SQRT2_2|M_SQRT2_X2|M_SQRTPI|NO_CHANGE|NULL|OBJ_CURVE_LASER|OBJ_ENEMY|OBJ_ENEMY_BOSS|OBJ_ENEMY_BOSS_SCENE|OBJ_FILE_BINARY|OBJ_FILE_TEXT|OBJ_ITEM|OBJ_LOOSE_LASER|OBJ_MESH|OBJ_PARTICLE_LIST_2D|OBJ_PARTICLE_LIST_3D|OBJ_PLAYER|OBJ_PRIMITIVE_2D|OBJ_PRIMITIVE_3D|OBJ_SHADER|OBJ_SHOT|OBJ_SHOT_PATTERN|OBJ_SOUND|OBJ_SPELL|OBJ_SPELL_MANAGE|OBJ_SPRITE_2D|OBJ_SPRITE_3D|OBJ_SPRITE_LIST_2D|OBJ_STRAIGHT_LASER|OBJ_TEXT|OBJ_TRAJECTORY_3D|OWNER_ENEMY|OWNER_PLAYER|PATTERN_ARROW|PATTERN_ARROW_AIMED|PATTERN_BASEPOINT_RESET|PATTERN_ELLIPSE|PATTERN_ELLIPSE_AIMED|PATTERN_FAN|PATTERN_FAN_AIMED|PATTERN_LINE|PATTERN_LINE_AIMED|PATTERN_POLYGON|PATTERN_POLYGON_AIMED|PATTERN_RING|PATTERN_RING_AIMED|PATTERN_ROSE|PATTERN_ROSE_AIMED|PATTERN_SCATTER|PATTERN_SCATTER_ANGLE|PATTERN_SCATTER_SPEED|PRIMITIVE_LINELIST|PRIMITIVE_LINESTRIP|PRIMITIVE_POINT_LIST|PRIMITIVE_TRIANGLELIST|PRIMITIVE_TRIANGLESTRIP PRIMITIVE_TRIANGLEFAN|REBIRTH_DEFAULT|REPLAY_DATE_TIME|REPLAY_FILE_PATH|REPLAY_FPS_AVERAGE|REPLAY_INDEX_ACTIVE REPLAY_INDEX_DIGIT_MIN REPLAY_INDEX_DIGIT_MAX|REPLAY_INDEX_USER RESULT_CANCEL RESULT_END RESULT_RETRY RESULT_SAVE_REPLAY|REPLAY_PLAYER_NAME|REPLAY_STAGE_INDEX_LIST REPLAY_STAGE_START_SCORE_LIST REPLAY_STAGE_LAST_SCORE_LIST REPLAY_COMMENT|REPLAY_TOTAL_SCORE|REPLAY_USER_NAME|SCREEN_HEIGHT|SCREEN_WIDTH|SCRIPT_PACKAGE|SCRIPT_STAGE|SOUND_AWAVE|SOUND_BGM|SOUND_MIDI|SOUND_MP3|SOUND_OGG|SOUND_SE|SOUND_UNKNOWN|SOUND_VOICE|SOUND_WAVE|STAGE_RESULT_BREAK_OFF STAGE_RESULT_PLAYER_DOWN STAGE_RESULT_CLEARED|STAGE_STATE_FINISHED|STATE_DOWN|STATE_END|STATE_HIT|STATE_NORMAL|STATUS_CLOSING|STATUS_INVALID|STATUS_LOADED|STATUS_PAUSED|STATUS_RUNNING|TARGET_ALL|TARGET_ENEMY|TARGET_PLAYER|TOPLAYER_CHANGE|TRANSFORM_ADDPATTERN_A1|TRANSFORM_ADDPATTERN_A2|TRANSFORM_ADDPATTERN_B1|TRANSFORM_ADDPATTERN_B2|TRANSFORM_ADD_SPEED_ANGLE|TRANSFORM_ANGULAR_MOVE|TRANSFORM_BLEND_CHANGE|TRANSFORM_GRAPHIC_CHANGE|TRANSFORM_N_DECEL_CHANGE|TRANSFORM_TO_SPEED_ANGLE|TRANSFORM_WAIT|TYPE_ALL|TYPE_CHILD|TYPE_FADE|TYPE_IMMEDIATE|TYPE_ITEM|TYPE_SCRIPT_ALL|TYPE_SCRIPT_PACKAGE|TYPE_SCRIPT_PLAYER|TYPE_SCRIPT_PLURAL|TYPE_SCRIPT_SINGLE|TYPE_SCRIPT_STAGE|TYPE_SHOT|VAR_ARRAY|VAR_BOOL|VAR_CHAR|VAR_INT|VAR_REAL|VAR_STRING|VK_BOMB|VK_CANCEL|VK_DOWN|VK_LEFT|VK_OK|VK_PAUSE|VK_RIGHT|VK_SHOT|VK_SLOWMOVE|VK_SPELL|VK_UP|VK_USER1|VK_USER2|VK_USER_ID_PLAYER|VK_USER_ID_STAGE'
+
+contexts:
+  main:
+    - include: expressions
+
+  comments:
+    - match: ^/\* =(\s*.*?)\s*= \*/$\n?
+      scope: comment.block.dnh
+      captures:
+        1: meta.toc-list.banner.block.dnh
+    - match: /\*
+      scope: punctuation.definition.comment.dnh
+      push:
+        - meta_scope: comment.block.dnh
+        - match: \*/
+          scope: punctuation.definition.comment.dnh
+          pop: true
+        - match: ^\s*(\*)(?!/)
+          captures:
+            1: punctuation.definition.comment.dnh
+    - match: \*/(?!\*)
+      scope: invalid.illegal.stray-comment-end.dnh
+    - match: ^// =(\s*.*?)\s*=\s*$\n?
+      scope: comment.line.banner.dnh
+      captures:
+        1: meta.toc-list.banner.line.dnh
+    - match: ///
+      scope: punctuation.definition.comment.dnh
+      push:
+        - meta_scope: dnh.comment.dnh
+        - match: \n
+          pop: true
+    - match: //
+      scope: punctuation.definition.comment.dnh
+      push:
+        - meta_scope: comment.line.double-slash.dnh
+        - match: \n
+          pop: true
+
+  strings:
+    - match: '"'
+      scope: punctuation.definition.string.begin.dnh
+      push:
+        - meta_scope: string.quoted.double.dnh
+        - match: '"'
+          scope: punctuation.definition.string.end.dnh
+          pop: true
+        - include: string_escaped_char
+        - include: string_placeholder
+    - match: "'"
+      scope: punctuation.definition.string.begin.dnh
+      push:
+        - meta_scope: string.quoted.single.dnh
+        - match: "'"
+          scope: punctuation.definition.string.end.dnh
+          pop: true
+        - include: string_escaped_char
+        - include: string_placeholder
+
+  string_escaped_char:
+    - match: '(\\)$\n'
+      captures:
+        1: punctuation.separator.continuation.dnh
+    - match: \\(?:\\|[abefnrtv\'"?]|[0-3][0-9]{0,2}|[4-7][0-9]?|x[a-fA-F0-9]+|u[a-fA-F0-9]{4}|U[a-fA-F0-9]{8})
+      scope: constant.character.escape.dnh
+    - match: \\.
+      scope: invalid.illegal.unknown-escape.dnh
+
+  string_placeholder:
+    - match: |-
+        (?x)%
+          (\d+\$)?                                      # field (argument #)
+          [#0\- +']*                                    # flags
+          [,;:_]?                                       # separator character (AltiVec)
+          ((-?\d+)|\*(-?\d+\$)?)?                       # minimum field width
+          (\.((-?\d+)|\*(-?\d+\$)?)?)?                  # precision
+          (hh|h|ll|l|j|t|z|q|L|vh|vl|v|hv|hl)?          # length modifier
+          (\[[^\]]+\]|[am]s|[diouxXDOUeEfFgGaACcSspn%]) # conversion type
+      scope: constant.other.placeholder.dnh
+
+  types:
+    - match: '({{block_functions}})(<)'
+      captures:
+        1: dnh.body.dnh
+        2: dnh.func-static.begin.dnh
+      push:
+        - meta_scope: meta.block.dnh
+        - match: '>'
+          scope: dnh.func-static.end.dnh
+          pop: true
+        - include: expressions
+    - match: \b({{block_types}})\b
+      scope: dnh.body.dnh
+    - match: \b({{basic_types}})\b
+      scope: dnh.basic-type.dnh
+
+  numbers:
+    # decimal floats
+    - match: |-
+        (?x:
+          \b(\d+[\d_]*)
+          (?:
+            ( (\.)
+              (?:
+                \d+[\d_]* {{dec_exponent}}?
+                | {{dec_exponent}}
+                | (?!\.)
+              )
+              | {{dec_exponent}}
+            ) ({{float_suffix}})?
+            | ({{float_suffix}})
+          ) ({{dec_suffix}})?
+          | ( (\.) \d+ {{dec_exponent}}? ) (?: ({{float_suffix}}) | ({{dec_suffix}}) )?
+        )
+      scope: meta.number.float.decimal.dnh
+      captures:
+        1: constant.numeric.value.dnh
+        2: constant.numeric.value.dnh
+        3: punctuation.separator.decimal.dnh
+        4: constant.numeric.suffix.dnh
+        5: constant.numeric.suffix.dnh
+        6: invalid.illegal.numeric.suffix.dnh
+        7: constant.numeric.value.dnh
+        8: punctuation.separator.decimal.dnh
+        9: constant.numeric.suffix.dnh
+        10: invalid.illegal.numeric.suffix.dnh
+
+    # hexadecimal integer
+    - match: \b(0[xX])([\h_]*)(?:({{integer_suffix}})|({{hex_suffix}}))?
+      scope: meta.number.integer.hexadecimal.dnh
+      captures:
+        1: constant.numeric.base.dnh
+        2: constant.numeric.value.dnh
+        3: constant.numeric.suffix.dnh
+        4: invalid.illegal.numeric.suffix.dnh
+
+    # octal integer
+    - match: \b(0[oO])([0-7_]*)(?:({{integer_suffix}})|({{oct_suffix}}))?
+      scope: meta.number.integer.hexadecimal.dnh
+      captures:
+        1: constant.numeric.base.dnh
+        2: constant.numeric.value.dnh
+        3: constant.numeric.suffix.dnh
+        4: invalid.illegal.numeric.suffix.dnh
+
+    # binary integer
+    - match: \b(0[bB])([0-1_]*)(?:({{integer_suffix}})|({{bin_suffix}}))?
+      scope: meta.number.integer.hexadecimal.dnh
+      captures:
+        1: constant.numeric.base.dnh
+        2: constant.numeric.value.dnh
+        3: constant.numeric.suffix.dnh
+        4: invalid.illegal.numeric.suffix.dnh
+
+    # decimal integer
+    - match: \b(\d+[\d_]*)(?:({{integer_suffix}})|({{dec_suffix}}))?
+      scope: meta.number.integer.decimal.dnh
+      captures:
+        1: constant.numeric.value.dnh
+        2: constant.numeric.suffix.dnh
+        3: invalid.illegal.numeric.suffix.dnh
+
+  data:
+    - match: \b({{data_files_blocks}})\b
+      scope: keyword.control.dnh
+
+    - match: \b({{data_files_attributes}})\b
+      scope: dnh.param-variable.dnh
+
+    # parens
+    - match: \(
+      scope: punctuation.section.group.begin.dnh
+      push:
+        - meta_scope: meta.group.dnh
+        - match: \)
+          scope: punctuation.section.group.end.dnh
+          pop: true
+        - include: data
+
+    # brackets
+    - match: \[
+      scope: punctuation.section.brackets.begin.dnh
+      push:
+        - meta_scope: meta.brackets.dnh
+        - match: \]
+          scope: punctuation.section.brackets.end.dnh
+          pop: true
+        - include: data
+
+    # block
+    - match: '\{'
+      scope: punctuation.section.block.begin.dnh
+      push:
+        - meta_scope: meta.block.dnh
+        - match: '\}'
+          scope: punctuation.section.block.end.dnh
+          pop: true
+        - include: data
+
+    - include: expressions
+
+
+  expressions:
+    - include: comments
+    - include: numbers
+    - include: strings
+    - include: types
+
+    # data files
+    - match: ^\s*(#\s*(?:{{data_files}}))\b
+      scope: keyword.operator.dnh
+      push:
+        - meta_scope: dnh.datafile.dnh
+        - include: data
+
+    # operators
+    - match: \+\+|--|\+\=|-\=|\*\=|/\=|%\=|&\=|\|\=|\^\=|>>\=|<<\=|<<|>>|&&|\|\||<\=|>\=|\=\=|\!\=|\+|\-|<|>|/|%|\||\^|~|!|\*|&|\=|\.\.|:|\?
+      scope: keyword.operator.dnh
+
+    # file headers
+    - match: ^\s*(#\s*(?:{{file_headers}}))\b
+      scope: keyword.operator.dnh
+
+    # keywords
+    - match: \b({{control_keywords}})\b
+      scope: keyword.control.dnh
+    - match: \b({{scope_keywords}})\b
+      scope: dnh.scope.dnh
+    - match: \b({{time_keywords}})\b
+      scope: dnh.yield.dnh
+
+    # scoped-variables
+    - match: \b(_[[:alpha:]_][[:alnum:]_]*)(?!\s*\()\b
+      captures:
+        1: dnh.global-variable.dnh
+    - match: \b[[:alpha:]_][[:alnum:]_]*_\b
+      scope: dnh.param-variable.dnh
+
+    # parens
+    - match: \(
+      scope: punctuation.section.group.begin.dnh
+      push:
+        - meta_scope: meta.group.dnh
+        - match: \)
+          scope: punctuation.section.group.end.dnh
+          pop: true
+        - include: expressions
+
+    # brackets
+    - match: \[
+      scope: punctuation.section.brackets.begin.dnh
+      push:
+        - meta_scope: meta.brackets.dnh
+        - match: \]
+          scope: punctuation.section.brackets.end.dnh
+          pop: true
+        - include: expressions
+
+    # block
+    - match: '\{'
+      scope: punctuation.section.block.begin.dnh
+      push:
+        - meta_scope: meta.block.dnh
+        - match: '\}'
+          scope: punctuation.section.block.end.dnh
+          pop: true
+        - include: expressions
+
+    # constants
+    - match: \b({{engine_constants}})\b
+      scope: dnh.constant.dnh
+    - match: '\b[A-Z]+(_[A-Z0-9]+)*\b'
+      scope: dnh.user-constant.dnh
+
+    # booleans
+    - match: \b(true|false)\b
+      scope: dnh.boolean.dnh
+
+    # block headers
+    - match: (^\s*)(@({{block_headers}})[ \n]*)
+      scope: dnh.block-header.dnh
+    - match: (^\s*)(@([[:alpha:]_][[:alnum:]_]*)[ \n]*)
+      scope: dnh.block-header-user.dnh
+
+    # function-call
+    - match: (?=({{identifier}})\s*\()
+      push:
+        - meta_content_scope: meta.function-call.dnh
+        - match: \b(_[[:alpha:]_][[:alnum:]_]*)\b
+          captures:
+            1: dnh.task.dnh
+          pop: true
+        - match: \b(Obj[[:alpha:]_][[:alnum:]_]*)\b
+          captures:
+            1: dnh.obj-func.dnh
+          pop: true
+        - match: '{{identifier}}'
+          scope: dnh.non-task.dnh
+          pop: true
+
+    # punctuation
+    - match: ','
+      scope: punctuation.separator.dnh
+    - match: ';'
+      scope: punctuation.terminator.dnh
+    - match: '\)|\}'
+      scope: invalid.illegal.stray-bracket-end.dnh
