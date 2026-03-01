@@ -49,6 +49,7 @@
 		"body": "#BF6686",
         "scope": "#00F0F0",
 		"yield": "#F000F0",
+        "docs": "#A0A070",
     },
     "globals":
     {
@@ -382,6 +383,12 @@
             "font_style": "bold",
             "foreground": "var(boolean)",
             "background": "var(bcol2)"
+        },
+        {
+            "name": "Documentation",
+            "scope": "dnh.documentation",
+            "font_style": "italic",
+            "foreground": "var(docs)"
         },
 		{
 			"name": "Basic Type",
