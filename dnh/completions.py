@@ -8,7 +8,9 @@ from difflib import SequenceMatcher
 
 
 ENGINE_NON_FUNCTIONS = [
-    { "sig": "doc", "lang": "vibrant-sx", "kind": sublime.KIND_KEYWORD, "completion": "/***\n$0\n***/" },
+    { "sig": "doc", "lang": "vibrant-sx", "kind": sublime.KIND_SNIPPET, "completion": "/***\n$0\n***/" },
+    { "sig": "ext", "lang": "vibrant-sx", "kind": sublime.KIND_SNIPPET, "completion": "//// external dependency" },
+    { "sig": "friend", "lang": "vibrant-sx", "kind": sublime.KIND_SNIPPET, "completion": "//// friend \"./path.dnh\"" },
 
     { "sig": "local", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "local\n{\n\t$0\n}" },
     { "sig": "function", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "function Fun()\n{\n\t$0\n}" },
@@ -87,10 +89,10 @@ ENGINE_NON_FUNCTIONS = [
 
     # Constants
 
-    { "sig": "_DNH_PH3SX_", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "_DNH_PH3SX_ZLABEL_", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "SCRIPT_STAGE", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "SCRIPT_PACKAGE", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "_DNH_PH3SX_", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "_DNH_PH3SX_ZLABEL_", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "SCRIPT_STAGE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "SCRIPT_PACKAGE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
 
     { "sig": "KEY_INVALID", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE, "value": "-1" },
     { "sig": "VK_LEFT", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
@@ -668,6 +670,8 @@ ENGINE_TRIGGERS = [
 
 INCLUDE_REGEX = re.compile(r'#include\s+"(.+?)"')
 
+FRIEND_REGEX = re.compile(r'\/\/\/\/\s*friend\s+"(.+?)"')
+
 ENGINE_FUNC_REGEX = re.compile(r"^(\w+::)?([A-Za-z_]\w*)\((.*?)\)$")
 
 USER_DEFINED_FUNC_TASK_SUB_REGEX = re.compile(
@@ -696,9 +700,11 @@ USER_DEFINED_CONST_REGEX = re.compile(
         (?P<type2>[A-Za-z_]\w*(?:\[\])*)\s+
         (?P<name2>[A-Za-z_]\w*)
     )
-    \s*=\s*
-    (?P<value>\[[^\]]*\]|[^;]+)
-    ;
+    (?:
+        \s*=\s*
+        (?P<value>\[[^\]]*\]|[^;]+)
+    )?
+    \s*;
     """,
     re.VERBOSE | re.DOTALL
 )
@@ -715,6 +721,9 @@ NAME_COLORS = {
 }
 
 HIGHLIGHT_KEY = "hover_highlight"
+
+_cache_uptodate = False
+_user_definition_cache = ([], [])
 
 
 def remove_comments(text):
@@ -803,15 +812,54 @@ def resolve_include(base_file, relative_path):
     return full_path
 
 
-def parse_functions_from_content(content, pos=0, source_file=None, entry_scope=""):
+def get_dnh_files(file_path):
+
+    if not file_path.lower().endswith(".dnh"):
+        return []
+
+    current_dir = os.path.abspath(
+        file_path if os.path.isdir(file_path) else os.path.dirname(file_path)
+    )
+
+    root_dir = None
+    search_dir = current_dir
+
+    while True:
+
+        if any(f.lower().endswith(".exe") for f in os.listdir(search_dir)):
+            root_dir = search_dir
+            break
+
+        parent_dir = os.path.dirname(search_dir)
+
+        if search_dir == parent_dir:
+            break
+
+        search_dir = parent_dir
+
+    if root_dir is None:
+        print("No directory containing a .exe file was found.")
+        return []
+
+    dnh_files = []
+
+    for root, _, files in os.walk(root_dir):
+
+        for name in files:
+
+            if name.lower().endswith(".dnh"):
+                dnh_files.append(os.path.abspath(os.path.join(root, name)))
+
+    return dnh_files
+
+
+def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope="", external=False, friend=False):
 
     function_entries = []
     variable_entries = []
 
     scopes = compute_scope_ranges(remove_strings_preserve_length(remove_comments_preserve_length(content)))
     scope_stack = find_scope_stack(scopes, pos)
-
-    # print(source_file, scope_stack)
 
     for match in USER_DEFINED_FUNC_TASK_SUB_REGEX.finditer(content):
 
@@ -851,10 +899,10 @@ def parse_functions_from_content(content, pos=0, source_file=None, entry_scope="
 
         line_number = content.count("\n", 0, match.start()) + 1 + raw_doc.count("\n") + (1 if match.group("doc") else 0)
 
-        function_entries.append({
+        function_entry = {
             "scope": entry_scope,
             "trigger": name,
-            "namespace": "",
+            "namespace": "{}::".format(os.path.splitext(os.path.basename(source_file))[0]),
             "params": param_names,
             "param_types": param_types,
             "return_type": rtype,
@@ -862,7 +910,15 @@ def parse_functions_from_content(content, pos=0, source_file=None, entry_scope="
             "language": "User Defined",
             "source_file": source_file,
             "line_number": line_number
-        })
+        }
+
+        if external:
+            function_entry["external"] = True
+
+        if friend:
+            function_entry["friend"] = True
+
+        function_entries.append(function_entry)
 
         brace_pos = content.find("{", match.end())
         after_scope = find_minimal_scope(scopes, brace_pos + 1)
@@ -877,16 +933,25 @@ def parse_functions_from_content(content, pos=0, source_file=None, entry_scope="
 
             for i, (param_name, param_type) in enumerate(zip(param_names, param_types)):
 
-                variable_entries.append({
+                variable_entry = {
                     "scope": entry_scope,
                     "trigger": param_name,
+                    "namespace": "{}::".format(os.path.splitext(os.path.basename(source_file))[0]),
                     "type": param_type,
                     "value": "<span style=\"color: hsl(261, 100%, 75%);\">Parameter {}</span> of <span style=\"color: {};\">{}</span>".format(i + 1, NAME_COLORS.get(name_type, "#40CEDF"), name),
                     "doc": "",
                     "language": "User Defined",
                     "source_file": source_file,
                     "line_number": line_number
-                })
+                }
+
+                if external:
+                    variable_entry["external"] = True
+
+                if friend:
+                    variable_entry["friend"] = True
+
+                variable_entries.append(variable_entry)
 
 
     for match in USER_DEFINED_CONST_REGEX.finditer(content):
@@ -904,71 +969,137 @@ def parse_functions_from_content(content, pos=0, source_file=None, entry_scope="
         raw_doc = match.group("doc") or "No documentation."
         doc = raw_doc.strip()
 
-        value = remove_comments_and_trim(match.group("value").strip()).replace("\n", "<br>").replace("\t", "&emsp;&emsp;")
+        value = remove_comments_and_trim(match.group("value").strip()).replace("\n", "<br>").replace("\t", "&emsp;&emsp;") if match.group("value") else "not initialized"
 
         line_number = content.count("\n", 0, match.start()) + 1 + raw_doc.count("\n") + (1 if match.group("doc") else 0)
 
-        variable_entries.append({
+        variable_entry = {
             "scope": entry_scope,
             "trigger": name,
+            "namespace": "{}::".format(os.path.splitext(os.path.basename(source_file))[0]),
             "type": type,
             "value": "<span style=\"color: #A0A070;\">{}</span>".format(value),
             "doc": doc,
             "language": "User Defined",
             "source_file": source_file,
             "line_number": line_number
-        })
+        }
+
+        if external:
+            variable_entry["external"] = True
+
+        if friend:
+            variable_entry["friend"] = True
+
+        variable_entries.append(variable_entry)
 
     return function_entries, variable_entries
 
 
-def extract_user_functions_recursive(view, file_path, max_offset=None, visited=None):
+def extract_user_definitions(view, file_path, location=None):
 
-    if visited is None:
-        visited = set()
+    global _cache_uptodate, _user_definition_cache
+
+    file_path = os.path.abspath(file_path)
+
+    visited = set()
 
     functions = []
     variables = []
 
-    if file_path in visited:
-        return functions, variables
+    def extract_user_definitions_from_forward_include(file_path, offset=None, caching=False, friend=False):
 
-    visited.add(file_path)
+        if file_path in visited:
+            return [], []
 
-    if not os.path.exists(file_path):
-        return functions, variables
+        visited.add(file_path)
 
-    if view.file_name() == file_path:
-        content = view.substr(sublime.Region(0, view.size()))
+        if not os.path.exists(file_path):
+            return [], []
 
-    else:
+        if os.path.abspath(view.file_name()) == file_path:
+            content = view.substr(sublime.Region(0, view.size()))
+
+        else:
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+            except Exception:
+                return [], []
+
+        internal_functions, internal_variables = parse_definitions_from_content(
+            content,
+            pos=offset if offset else 0,
+            source_file=file_path,
+            entry_scope=view.scope_name(0) if os.path.abspath(view.file_name()) == file_path else "",
+            friend=friend
+        )
+
+        functions.extend(internal_functions)
+        variables.extend(internal_variables)
+
+        if caching:
+            _user_definition_cache[0].extend(internal_functions)
+            _user_definition_cache[1].extend(internal_variables)
+
+        if _cache_uptodate:
+            functions.extend(_user_definition_cache[0])
+            variables.extend(_user_definition_cache[1])
+
+        else:
+            if offset is not None:
+                content = content[:offset]
+
+            for match in INCLUDE_REGEX.finditer(remove_comments(content)):
+
+                relative_path = match.group(1)
+                included_file = resolve_include(file_path, relative_path)
+
+                extract_user_definitions_from_forward_include(included_file, caching=True, friend=friend)
+
+            for match in FRIEND_REGEX.finditer(content):
+
+                relative_path = match.group(1)
+                included_file = resolve_include(file_path, relative_path)
+
+                extract_user_definitions_from_forward_include(included_file, caching=True, friend=True)
+
+    extract_user_definitions_from_forward_include(file_path, location)
+
+    if not _cache_uptodate:
+        _cache_uptodate = True
+
+    return functions, variables
+
+
+def extract_user_definitions_everywhere(file_path):
+
+    functions = []
+    variables = []
+
+    dnh_files = get_dnh_files(file_path)
+
+    for dnh_file in dnh_files:
+
+        if file_path == dnh_file:
+            continue
+
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(dnh_file, "r", encoding="utf-8") as f:
                 content = f.read()
         except Exception:
-            return functions, variables
+            continue
 
-    internal_functions, internal_variables = parse_functions_from_content(
-        content,
-        pos=max_offset if max_offset else 0,
-        source_file=file_path,
-        entry_scope=view.scope_name(0) if view.file_name() == file_path else ""
-    )
+        internal_functions, internal_variables = parse_definitions_from_content(
+            content,
+            pos=0,
+            source_file=dnh_file,
+            entry_scope="",
+            external=True
+        )
 
-    functions.extend(internal_functions)
-    variables.extend(internal_variables)
-
-    if max_offset is not None:
-        content = content[:max_offset]
-
-    for match in INCLUDE_REGEX.finditer(remove_comments(content)):
-        relative_path = match.group(1)
-        included_file = resolve_include(file_path, relative_path)
-
-        included_functions, included_variables = extract_user_functions_recursive(view, included_file, None, visited)
-
-        functions.extend(included_functions)
-        variables.extend(included_variables)
+        functions.extend(internal_functions)
+        variables.extend(internal_variables)
 
     return functions, variables
 
@@ -1064,7 +1195,7 @@ def score_return_context(entry, context):
 
     if context == "expression":
         if return_type == "void":
-            return -20000
+            return 20000
         return 10000
 
     return 0
@@ -1111,9 +1242,12 @@ def score_param_alignment(entry, call_args):
 
 def choose_best_overload(matching, arg_count, context, call_args):
 
+    if not matching:
+        return (None, [])
+
     candidates = []
 
-    for e in matching:
+    for (ind, e) in enumerate(matching):
 
         param_len = len(e["params"])
         is_variadic = e.get("is_variadic", False)
@@ -1139,17 +1273,21 @@ def choose_best_overload(matching, arg_count, context, call_args):
         score += score_return_context(e, context)
         score += score_param_alignment(e, call_args)
 
-        candidates.append((score, e))
+        candidates.append((score, e, ind))
 
     if not candidates:
-        return None
+        return (None, [])
 
     candidates.sort(key=lambda x: x[0], reverse=True)
 
-    return candidates[0][1]
+    return (candidates[0][1], candidates)
 
 
-def open_file_center_and_highlight(file_path, line_number):
+def open_file_center_and_highlight(href):
+
+    path_line, _ = href.rsplit(":", 1)
+    file_path, line_number = path_line.rsplit(":", 1)
+    line_number = int(line_number)
 
     window = sublime.active_window()
 
@@ -1186,6 +1324,24 @@ class HoverEventListener(sublime_plugin.EventListener):
 
         if command_name in ("drag_select", "left_delete", "right_delete"):
             view.erase_regions(HIGHLIGHT_KEY)
+
+    def on_post_save(self, view):
+
+        global _cache_uptodate, _user_definition_cache
+
+        _cache_uptodate = False
+        _user_definition_cache = ([], [])
+
+        extract_user_definitions(view, view.file_name())
+
+    def on_activated(self, view):
+
+        global _cache_uptodate, _user_definition_cache
+
+        _cache_uptodate = False
+        _user_definition_cache = ([], [])
+
+        extract_user_definitions(view, view.file_name())
 
 
 class Library:
@@ -1297,6 +1453,7 @@ class DictCollector(sublime_plugin.EventListener):
         items = []
 
         for lib in library.collection:
+
             scope = lib["scope"]
 
             if not view.match_selector(location, scope):
@@ -1351,7 +1508,7 @@ class DictCollector(sublime_plugin.EventListener):
                 )
 
             file_path = view.file_name()
-            user_function_entries, user_variable_entries = extract_user_functions_recursive(view, file_path, max_offset=location)
+            user_function_entries, user_variable_entries = extract_user_definitions(view, file_path, location)
 
             for entry in user_function_entries:
 
@@ -1360,7 +1517,8 @@ class DictCollector(sublime_plugin.EventListener):
                     ", ".join(entry["params"])
                 )
 
-                signature = "{}({})".format(
+                signature = "{}{}({})".format(
+                    entry["namespace"],
                     entry["trigger"],
                     ", ".join(entry["params"])
                 )
@@ -1376,9 +1534,15 @@ class DictCollector(sublime_plugin.EventListener):
                 </div>
                 """.format(signature, entry["return_type"], doc_html)
 
+                full_trigger = "{}{}{}".format(
+                    "friend." if entry.get("friend") else "",
+                    entry["namespace"],
+                    entry["trigger"]
+                )
+
                 items.append(
                     sublime.CompletionItem(
-                        trigger=entry["trigger"],
+                        trigger=full_trigger,
                         annotation=entry["return_type"],
                         completion=snippet,
                         details=details,
@@ -1417,9 +1581,15 @@ class DictCollector(sublime_plugin.EventListener):
 
                 details = "<i>&emsp;User Defined</i>&emsp;({})&emsp;<i>{}</i>".format(entry["value"], doc_html)
 
+                full_trigger = "{}{}{}".format(
+                    "friend." if entry.get("friend") else "",
+                    entry["namespace"],
+                    entry["trigger"]
+                )
+
                 items.append(
                     sublime.CompletionItem(
-                        trigger=entry["trigger"],
+                        trigger=full_trigger,
                         annotation=entry["type"],
                         completion=snippet,
                         details=details,
@@ -1466,7 +1636,15 @@ class DnhHoverDocs(sublime_plugin.EventListener):
             matching = []
 
             file_path = view.file_name()
-            user_function_entries, user_variable_entries = extract_user_functions_recursive(view, file_path, max_offset=point)
+
+            can_match_multiple = False
+
+            if "//// external dependency" in view.substr(view.full_line(point)):
+                can_match_multiple = True
+                user_function_entries, user_variable_entries = extract_user_definitions_everywhere(file_path)
+
+            else:
+                user_function_entries, user_variable_entries = extract_user_definitions(view, file_path, point)
 
             all_entries = lib.get("entries", []) + user_function_entries + user_variable_entries + ENGINE_TRIGGERS
 
@@ -1487,11 +1665,37 @@ class DnhHoverDocs(sublime_plugin.EventListener):
                 context = get_expression_context(view, word_region)
                 call_args = extract_call_arguments(view, word_region)
 
-                best = choose_best_overload(matching, arg_count, context, call_args)
+                if can_match_multiple:                    
+                    _, candidates = choose_best_overload(matching, arg_count, context, call_args)
 
-                if best:
-                    self.show_popup(view, word_region, best)
-                    return
+                    if len(candidates) > 0:
+                        merge_candidate = candidates[0][1]
+
+                        merge_candidate["source_files"] = [merge_candidate["source_file"]]
+                        merge_candidate["line_numbers"] = [merge_candidate["line_number"]]
+
+                        del merge_candidate["source_file"]
+                        del merge_candidate["line_number"]
+
+                        if "namespace" in merge_candidate:
+                            del merge_candidate["namespace"]
+
+                        for other_candidate in candidates[1:]:
+
+                            merge_candidate["source_files"].append(other_candidate[1]["source_file"])
+                            merge_candidate["line_numbers"].append(other_candidate[1]["line_number"])
+
+                            if other_candidate[1]["doc"] != "No documentation.":
+                                merge_candidate["doc"] += "\n" + other_candidate[1]["doc"]
+
+                        self.show_popup(view, word_region, merge_candidate)
+
+                else:
+                    best, _ = choose_best_overload(matching, arg_count, context, call_args)
+
+                    if best:
+                        self.show_popup(view, word_region, best)
+                        return
 
 
             self.show_popup(view, word_region, matching[0])
@@ -1501,7 +1705,7 @@ class DnhHoverDocs(sublime_plugin.EventListener):
 
         def popup_link_clicked(href):
 
-            open_file_center_and_highlight(source_file, line_number)
+            open_file_center_and_highlight(href)
             sublime.active_window().open_file(href, sublime.ENCODED_POSITION)
 
         language_colors = {
@@ -1513,15 +1717,24 @@ class DnhHoverDocs(sublime_plugin.EventListener):
 
         language = entry["language"]
 
-        source_file = entry.get("source_file")
-        line_number = entry.get("line_number")
-
         source_html = ""
 
+        source_file = entry.get("source_file")
+        source_files = entry.get("source_files")
+
         if source_file:
+            line_number = entry.get("line_number")
             source_html = "<a href=\"{}\">{}:{}</a>".format("{}:{}:0".format(source_file, line_number), source_file, line_number)
 
+        elif source_files:
+            line_numbers = entry.get("line_numbers")
+
+            for src_file, line_num in zip(source_files, line_numbers):
+                source_html += "<a href=\"{}\">{}:{}</a><br>".format("{}:{}:0".format(src_file, line_num), src_file, line_num)
+
+
         wrapped_lines = []
+
         for line in entry.get("doc", "").split("\n"):
             wrapped_lines.extend(textwrap.wrap(line, width=9000) or [""])
 
@@ -1530,7 +1743,7 @@ class DnhHoverDocs(sublime_plugin.EventListener):
             for line in wrapped_lines
         )
 
-        location_html = "<span style=\"color: gainsboro;\"><br>{}</span>".format(source_html) if source_file else ""
+        location_html = "<span style=\"color: gainsboro;\"><br>{}</span>".format(source_html) if len(source_html) > 0 else ""
 
         if "return_type" in entry:
             # Functions
@@ -1559,6 +1772,7 @@ class DnhHoverDocs(sublime_plugin.EventListener):
                     <span style="opacity:0.6; color: {language_color};"><i>{language}{location}</i></span>
                 </div>
                 <div style="font-size: 1.05rem; margin-bottom: 6px;">
+                    <span style="opacity:0.6;color: #AFFFC0;">{access}</span>
                     <span style="opacity:0.6;color: violet;">{namespace}</span>{name}({params})
                      → <span style="color: #40D0B0;"><i>{rtype}</i></span>
                 </div>
@@ -1568,7 +1782,8 @@ class DnhHoverDocs(sublime_plugin.EventListener):
             """.format(
                 language_color=html.escape(language_colors.get(language, "white")),
                 language=html.escape(language),
-                namespace=html.escape(entry["namespace"]),
+                access="friend " if entry.get("friend") else "",
+                namespace=html.escape(entry.get("namespace", "")),
                 name="<span style=\"color: " + NAME_COLORS.get(name_type, "#40CEDF") + ";\">" + html.escape(entry["trigger"]) + "</span>",
                 params=param_html,
                 rtype=html.escape(return_type),
@@ -1599,8 +1814,9 @@ class DnhHoverDocs(sublime_plugin.EventListener):
                     <span style="opacity:0.6; color: {language_color};"><i>{language}{location}</i></span>
                 </div>
                 <div style="font-size: 1.05rem; margin-bottom: 6px;">
-                     <span style="color: #40D0B0;"><i>{type}</i></span>
-                     {name}   {value}
+                    <span style="opacity:0.6;color: #AFFFC0;">{access}</span>
+                    <span style="color: #40D0B0;"><i>{type}</i></span>
+                     <span style="opacity:0.6;color: violet;">{namespace}</span>{name}   {value}
                 </div>
                 <hr>
                 {doc}
@@ -1608,6 +1824,8 @@ class DnhHoverDocs(sublime_plugin.EventListener):
             """.format(
                 language_color=html.escape(language_colors.get(language, "white")),
                 language=html.escape(language),
+                access="friend " if entry.get("friend") else "",
+                namespace=entry.get("namespace", ""),
                 type=html.escape(entry["type"]),
                 name="<span style=\"color: " + NAME_COLORS.get(name_type, "#90B0D0") + ";\">" + html.escape(entry["trigger"]) + "</span>",
                 value="({})".format(entry.get("value")) if entry.get("value") else "",

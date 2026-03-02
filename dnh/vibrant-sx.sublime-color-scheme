@@ -29,6 +29,7 @@
         "fcol": "#90B0D0",
 		"bcol": "#181920",
         "bcol2": "#484960",
+        "bcol3": "#205030",
 
 		"terminator": "#DFDFDF",
 		"keyword": "#27D900",
@@ -377,6 +378,13 @@
         },
 
 		// DNH Rules
+        {
+            "name": "Library Comment",
+            "scope": "dnh.library-comment",
+            "font_style": "bold",
+            "foreground": "var(green)",
+            "background": "var(bcol3)"
+        },
         {
             "name": "Label Comment",
             "scope": "dnh.comment",

@@ -75,6 +75,12 @@ contexts:
       scope: comment.line.banner.dnh
       captures:
         1: meta.toc-list.banner.line.dnh
+    - match: ////
+      scope: punctuation.definition.comment.dnh
+      push:
+        - meta_scope: dnh.library-comment.dnh
+        - match: \n
+          pop: true
     - match: ///
       scope: punctuation.definition.comment.dnh
       push:
