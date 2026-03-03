@@ -33,7 +33,9 @@ ENGINE_NON_FUNCTIONS = [
     { "sig": "in", "lang": "ph3", "kind": sublime.KIND_KEYWORD },
     { "sig": "ref", "lang": "ph3sx", "kind": sublime.KIND_KEYWORD },
     { "sig": "ascent", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "ascent (i in 0..n)\n{\n\t$0\n}" },
+    { "sig": "ascent", "lang": "ph3sx", "kind": sublime.KIND_KEYWORD, "completion": "ascent (int i in 0..n)\n{\n\t$0\n}" },
     { "sig": "descent", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "descent (i in 0..n)\n{\n\t$0\n}" },
+    { "sig": "descent", "lang": "ph3sx", "kind": sublime.KIND_KEYWORD, "completion": "descent (int i in 0..n)\n{\n\t$0\n}" },
     { "sig": "loop", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "loop\n{\n\t$0\n}", "desc": "loop (Infinite loop)" },
     { "sig": "loop", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "loop (n)\n{\n\t$0\n}", "desc": "loop (n) (Finite loop)" },
     { "sig": "if", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "if (cond)\n{\n\t$0\n}" },
@@ -676,7 +678,7 @@ ENGINE_FUNC_REGEX = re.compile(r"^(\w+::)?([A-Za-z_]\w*)\((.*?)\)$")
 
 USER_DEFINED_FUNC_TASK_SUB_REGEX = re.compile(
     r"""
-    (?:/\*\*\*(?P<doc>.*?)\*\*\*/\s*)?
+    (?:\/\*\*\*(?P<doc>.*?)\*\*\*\/\s*)?
     (?P<kind>func|function|task|sub)
     (?:<(?P<rtype>[^>]+)>)?
     \s+
@@ -689,22 +691,22 @@ USER_DEFINED_FUNC_TASK_SUB_REGEX = re.compile(
     re.DOTALL | re.VERBOSE
 )
 
-USER_DEFINED_CONST_REGEX = re.compile(
+USER_DEFINED_VARIABLE_REGEX = re.compile(
     r"""
-    (?:/\*\*\*(?P<doc>.*?)\*\*\*/\s*)?
+    (?:\/\*\*\*(?P<doc>.*?)\*\*\*\/\s*)?
     (?:
         const\s+
-        (?:(?P<type1>[A-Za-z_]\w*(?:\[\])*)\s+)?
+        (?:(?P<type1>\b(?:bool|char|float|string|int|var|let|real)\b(?:\[\])*)\s+)?
         (?P<name1>[A-Za-z_]\w*)
       |
-        (?P<type2>[A-Za-z_]\w*(?:\[\])*)\s+
+        (?P<type2>\b(?:bool|char|float|string|int|var|let|real)\b(?:\[\])*)\s+
         (?P<name2>[A-Za-z_]\w*)
     )
     (?:
         \s*=\s*
         (?P<value>\[[^\]]*\]|[^;]+)
     )?
-    \s*;
+    \s*# no semicolon
     """,
     re.VERBOSE | re.DOTALL
 )
@@ -728,8 +730,9 @@ _user_definition_cache = ([], [])
 
 def remove_comments(text):
 
-    text = re.sub(r'//.*', '', text)
-    text = re.sub(r'/\*.*?\*/', '', text, flags=re.S)
+    text = re.sub(r'\/\/.*', '', text)
+
+    text = re.sub(r'\/\*.*?\*\/', '', text, flags=re.S)
 
     return text
 
@@ -739,16 +742,18 @@ def remove_comments_preserve_length(text):
     def replacer(match):
         return " " * len(match.group(0))
 
-    text = re.sub(r'//.*', replacer, text)
-    text = re.sub(r'/\*.*?\*/', replacer, text, flags=re.S)
+    text = re.sub(r'\/\/.*', replacer, text)
+
+    text = re.sub(r'\/\*.*?\*\/', replacer, text, flags=re.S)
 
     return text
 
 
 def remove_comments_and_trim(text):
 
-    text = re.sub(r'/\*.*?\*/', '', text, flags=re.S)
-    text = re.sub(r'^[ \t]*//.*(?:\r?\n|$)', '', text, flags=re.M)
+    text = re.sub(r'\/\*.*?\*\/', '', text, flags=re.S)
+
+    text = re.sub(r'^[ \t]*\/\/.*(?:\r?\n|$)', '', text, flags=re.M)
     text = re.sub(r'^[ \t]*\r?\n', '', text, flags=re.M)
 
     return text
@@ -762,6 +767,16 @@ def remove_strings_preserve_length(text):
     text = re.sub(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', replacer, text)
 
     return text
+
+
+def preceded_by_paren_or_comma(text, pos):
+
+    i = pos - 1
+
+    while i >= 0 and text[i].isspace():
+        i -= 1
+
+    return i >= 0 and (text[i] == '(' or text[i] == ',')
 
 
 def compute_scope_ranges(text):
@@ -858,10 +873,15 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
     function_entries = []
     variable_entries = []
 
-    scopes = compute_scope_ranges(remove_strings_preserve_length(remove_comments_preserve_length(content)))
+    filtered_content = remove_strings_preserve_length(remove_comments_preserve_length(content))
+
+    scopes = compute_scope_ranges(filtered_content)
     scope_stack = find_scope_stack(scopes, pos)
 
     for match in USER_DEFINED_FUNC_TASK_SUB_REGEX.finditer(content):
+
+        if content[match.start()] != filtered_content[match.start()]:
+            continue
 
         minimal_scope = find_minimal_scope(scopes, match.start())
 
@@ -953,17 +973,36 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
 
                 variable_entries.append(variable_entry)
 
+    added_parameters = [entry["trigger"] for entry in variable_entries]
 
-    for match in USER_DEFINED_CONST_REGEX.finditer(content):
+    for match in USER_DEFINED_VARIABLE_REGEX.finditer(content):
 
-        minimal_scope = find_minimal_scope(scopes, match.start())
+        if content[match.start()] != filtered_content[match.start()]:
+            continue
+
+        matchName1 = match.group("name1")
+        name = matchName1 if matchName1 else match.group("name2")
+
+        if name in added_parameters:
+            continue
+
+        scope_start = match.start()
+
+        if preceded_by_paren_or_comma(content, match.start()):
+            brace_pos = content.find("{", match.end())
+            minimal_scope = find_minimal_scope(scopes, brace_pos + 1)
+
+        else:
+            minimal_scope = find_minimal_scope(scopes, scope_start)
 
         if minimal_scope is not None and minimal_scope not in scope_stack:
             continue
 
-        matchName1 = match.group("name1")
+        # omit variable definitions in viewed file past cursor (variables only, not functions)
 
-        name = matchName1 if matchName1 else match.group("name2")
+        if len(entry_scope) > 0 and match.start() > pos:
+            continue
+
         type = ("const {}".format(match.group("type1"))) if matchName1 else match.group("type2")
 
         raw_doc = match.group("doc") or "No documentation."
@@ -978,7 +1017,7 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
             "trigger": name,
             "namespace": "{}::".format(os.path.splitext(os.path.basename(source_file))[0]),
             "type": type,
-            "value": "<span style=\"color: #A0A070;\">{}</span>".format(value),
+            "value": "<span style=\"color: #A0A070;\">{}</span>".format(html.escape(value)),
             "doc": doc,
             "language": "User Defined",
             "source_file": source_file,
@@ -1001,6 +1040,9 @@ def extract_user_definitions(view, file_path, location=None):
     global _cache_uptodate, _user_definition_cache
 
     file_path = os.path.abspath(file_path)
+
+    if not file_path.lower().endswith(".dnh"):
+        return [], []
 
     visited = set()
 
