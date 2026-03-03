@@ -1017,8 +1017,11 @@ def extract_user_definitions(view, file_path, location=None):
         if not os.path.exists(file_path):
             return [], []
 
+        can_find_friends = False
+
         if os.path.abspath(view.file_name()) == file_path:
             content = view.substr(sublime.Region(0, view.size()))
+            can_find_friends = True
 
         else:
             try:
@@ -1057,12 +1060,13 @@ def extract_user_definitions(view, file_path, location=None):
 
                 extract_user_definitions_from_forward_include(included_file, caching=True, friend=friend)
 
-            for match in FRIEND_REGEX.finditer(content):
+            if can_find_friends:
+                for match in FRIEND_REGEX.finditer(content):
 
-                relative_path = match.group(1)
-                included_file = resolve_include(file_path, relative_path)
+                    relative_path = match.group(1)
+                    included_file = resolve_include(file_path, relative_path)
 
-                extract_user_definitions_from_forward_include(included_file, caching=True, friend=True)
+                    extract_user_definitions_from_forward_include(included_file, caching=True, friend=True)
 
     extract_user_definitions_from_forward_include(file_path, location)
 
