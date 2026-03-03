@@ -1092,8 +1092,8 @@ def extract_user_definitions(view, file_path, location=None):
             variables.extend(_user_definition_cache[1])
 
         else:
-            if offset is not None:
-                content = content[:offset]
+            # if offset:
+            #     content = content[:offset]
 
             for match in INCLUDE_REGEX.finditer(remove_comments(content)):
 
@@ -1110,7 +1110,7 @@ def extract_user_definitions(view, file_path, location=None):
 
                     extract_user_definitions_from_forward_include(included_file, caching=True, friend=True)
 
-    extract_user_definitions_from_forward_include(file_path, location)
+    extract_user_definitions_from_forward_include(file_path, offset=location)
 
     if not _cache_uptodate:
         _cache_uptodate = True
@@ -1140,7 +1140,6 @@ def extract_user_definitions_everywhere(file_path):
             content,
             pos=0,
             source_file=dnh_file,
-            entry_scope="",
             external=True
         )
 
@@ -1378,7 +1377,7 @@ class HoverEventListener(sublime_plugin.EventListener):
         _cache_uptodate = False
         _user_definition_cache = ([], [])
 
-        extract_user_definitions(view, view.file_name())
+        extract_user_definitions(view, view.file_name(), view.sel()[0].begin())
 
     def on_activated(self, view):
 
@@ -1387,7 +1386,7 @@ class HoverEventListener(sublime_plugin.EventListener):
         _cache_uptodate = False
         _user_definition_cache = ([], [])
 
-        extract_user_definitions(view, view.file_name())
+        extract_user_definitions(view, view.file_name(), view.sel()[0].begin())
 
 
 class Library:
