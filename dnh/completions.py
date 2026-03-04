@@ -724,8 +724,7 @@ NAME_COLORS = {
 
 HIGHLIGHT_KEY = "hover_highlight"
 
-_cache_uptodate = False
-_user_definition_cache = ([], [])
+_user_included_definitions_cache = {}
 
 
 def remove_comments(text):
@@ -940,7 +939,7 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
 
         function_entries.append(function_entry)
 
-        brace_pos = content.find("{", match.end())
+        brace_pos = filtered_content.find("{", match.end())
         after_scope = find_minimal_scope(scopes, brace_pos + 1)
 
         if after_scope in scope_stack:
@@ -989,7 +988,7 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
         scope_start = match.start()
 
         if preceded_by_paren_or_comma(content, match.start()):
-            brace_pos = content.find("{", match.end())
+            brace_pos = filtered_content.find("{", match.end())
             minimal_scope = find_minimal_scope(scopes, brace_pos + 1)
 
         else:
@@ -1032,12 +1031,12 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
 
         variable_entries.append(variable_entry)
 
-    return function_entries, variable_entries
+    return function_entries, variable_entries, scopes, scope_stack
 
 
 def extract_user_definitions(view, file_path, location=None):
 
-    global _cache_uptodate, _user_definition_cache
+    global _user_included_definitions_cache
 
     file_path = os.path.abspath(file_path)
 
@@ -1049,30 +1048,30 @@ def extract_user_definitions(view, file_path, location=None):
     functions = []
     variables = []
 
-    def extract_user_definitions_from_forward_include(file_path, offset=None, caching=False, friend=False):
+    def extract_user_definitions_recurse(file_path, offset=None, inclusion_root=None, caching=False, friend=False):
 
         if file_path in visited:
-            return [], []
+            return
 
         visited.add(file_path)
 
         if not os.path.exists(file_path):
-            return [], []
+            return
 
-        can_find_friends = False
+        is_view_file = False
 
         if os.path.abspath(view.file_name()) == file_path:
             content = view.substr(sublime.Region(0, view.size()))
-            can_find_friends = True
+            is_view_file = True
 
         else:
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     content = f.read()
             except Exception:
-                return [], []
+                return
 
-        internal_functions, internal_variables = parse_definitions_from_content(
+        internal_functions, internal_variables, scopes, scope_stack = parse_definitions_from_content(
             content,
             pos=offset if offset else 0,
             source_file=file_path,
@@ -1084,36 +1083,56 @@ def extract_user_definitions(view, file_path, location=None):
         variables.extend(internal_variables)
 
         if caching:
-            _user_definition_cache[0].extend(internal_functions)
-            _user_definition_cache[1].extend(internal_variables)
+            _user_included_definitions_cache[inclusion_root] = (internal_functions, internal_variables)
 
-        if _cache_uptodate:
-            functions.extend(_user_definition_cache[0])
-            variables.extend(_user_definition_cache[1])
+        for match in INCLUDE_REGEX.finditer(remove_comments(content)):
 
-        else:
-            # if offset:
-            #     content = content[:offset]
+            if offset and match.start() > offset:
+                continue
 
-            for match in INCLUDE_REGEX.finditer(remove_comments(content)):
+            minimal_scope = find_minimal_scope(scopes, match.start())
 
-                relative_path = match.group(1)
-                included_file = resolve_include(file_path, relative_path)
+            if minimal_scope is not None and minimal_scope not in scope_stack:
+                continue
 
-                extract_user_definitions_from_forward_include(included_file, caching=True, friend=friend)
+            relative_path = match.group(1)
+            included_file = resolve_include(file_path, relative_path)
 
-            if can_find_friends:
-                for match in FRIEND_REGEX.finditer(content):
+            if included_file in _user_included_definitions_cache:
+                downward_functions, downward_variables = _user_included_definitions_cache[included_file]
 
-                    relative_path = match.group(1)
-                    included_file = resolve_include(file_path, relative_path)
+                functions.extend(downward_functions)
+                variables.extend(downward_variables)
 
-                    extract_user_definitions_from_forward_include(included_file, caching=True, friend=True)
+            else:
+                extract_user_definitions_recurse(included_file, inclusion_root=(included_file if is_view_file else inclusion_root), caching=True, friend=friend)
 
-    extract_user_definitions_from_forward_include(file_path, offset=location)
+        if not is_view_file:
+            return
 
-    if not _cache_uptodate:
-        _cache_uptodate = True
+        for match in FRIEND_REGEX.finditer(content):
+
+            if offset and match.start() > offset:
+                continue
+
+            minimal_scope = find_minimal_scope(scopes, match.start())
+
+            if minimal_scope is not None and minimal_scope not in scope_stack:
+                continue
+
+            relative_path = match.group(1)
+            included_file = resolve_include(file_path, relative_path)
+
+            if included_file in _user_included_definitions_cache:
+                downward_functions, downward_variables = _user_included_definitions_cache[included_file]
+
+                functions.extend(downward_functions)
+                variables.extend(downward_variables)
+
+            else:
+                extract_user_definitions_recurse(included_file, inclusion_root=included_file, caching=True, friend=True)
+
+    extract_user_definitions_recurse(file_path, offset=location)
 
     return functions, variables
 
@@ -1136,7 +1155,7 @@ def extract_user_definitions_everywhere(file_path):
         except Exception:
             continue
 
-        internal_functions, internal_variables = parse_definitions_from_content(
+        internal_functions, internal_variables, _, _ = parse_definitions_from_content(
             content,
             pos=0,
             source_file=dnh_file,
@@ -1372,19 +1391,17 @@ class HoverEventListener(sublime_plugin.EventListener):
 
     def on_post_save(self, view):
 
-        global _cache_uptodate, _user_definition_cache
+        global _user_included_definitions_cache
 
-        _cache_uptodate = False
-        _user_definition_cache = ([], [])
+        _user_included_definitions_cache = {}
 
         extract_user_definitions(view, view.file_name(), view.sel()[0].begin())
 
     def on_activated(self, view):
 
-        global _cache_uptodate, _user_definition_cache
+        global _user_included_definitions_cache
 
-        _cache_uptodate = False
-        _user_definition_cache = ([], [])
+        _user_included_definitions_cache = {}
 
         extract_user_definitions(view, view.file_name(), view.sel()[0].begin())
 
@@ -1645,7 +1662,12 @@ class DictCollector(sublime_plugin.EventListener):
         if not items:
             return None
 
-        return (items, sublime.INHIBIT_EXPLICIT_COMPLETIONS | sublime.INHIBIT_WORD_COMPLETIONS)
+        return sublime.CompletionList(
+            items,
+            sublime.INHIBIT_WORD_COMPLETIONS
+            | sublime.INHIBIT_EXPLICIT_COMPLETIONS
+            | sublime.DYNAMIC_COMPLETIONS
+            | sublime.INHIBIT_REORDER)
 
 
 class DnhHoverDocs(sublime_plugin.EventListener):
