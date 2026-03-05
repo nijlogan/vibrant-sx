@@ -796,14 +796,14 @@ def compute_scope_ranges(text):
     return scopes
 
 
-def find_minimal_scope(scopes, pos):
+# def find_minimal_scope(scopes, pos):
 
-    for start, end in reversed(scopes):
+#     for start, end in reversed(scopes):
 
-        if start < pos < end:
-            return (start, end)
+#         if start < pos < end:
+#             return (start, end)
 
-    return None
+#     return None
 
 
 def find_scope_stack(scopes, pos):
@@ -882,7 +882,8 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
         if content[match.start()] != filtered_content[match.start()]:
             continue
 
-        minimal_scope = find_minimal_scope(scopes, match.start())
+        function_scope_stack = find_scope_stack(scopes, match.start())
+        minimal_scope = function_scope_stack[0] if (function_scope_stack and len(function_scope_stack) > 0) else None
 
         if minimal_scope is not None and minimal_scope not in scope_stack:
             continue
@@ -940,9 +941,10 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
         function_entries.append(function_entry)
 
         brace_pos = filtered_content.find("{", match.end())
-        after_scope = find_minimal_scope(scopes, brace_pos + 1)
+        parameter_scope_stack = find_scope_stack(scopes, brace_pos + 1)
+        minimal_parameter_scope = parameter_scope_stack[0] if (parameter_scope_stack and len(parameter_scope_stack) > 0) else None
 
-        if after_scope in scope_stack:
+        if minimal_parameter_scope is not None and minimal_parameter_scope in scope_stack and pos <= minimal_parameter_scope[1]:
             name_type = "non-task"
 
             if len(name) > 0 and name[0] == "_":
@@ -951,7 +953,6 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
                 name_type = "obj-func"
 
             for i, (param_name, param_type) in enumerate(zip(param_names, param_types)):
-
                 variable_entry = {
                     "scope": entry_scope,
                     "trigger": param_name,
@@ -972,7 +973,7 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
 
                 variable_entries.append(variable_entry)
 
-    added_parameters = [entry["trigger"] for entry in variable_entries]
+    seen_parameters = [entry["trigger"] for entry in variable_entries]
 
     for match in USER_DEFINED_VARIABLE_REGEX.finditer(content):
 
@@ -982,19 +983,22 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
         matchName1 = match.group("name1")
         name = matchName1 if matchName1 else match.group("name2")
 
-        if name in added_parameters:
+        if name in seen_parameters:
             continue
-
-        scope_start = match.start()
 
         if preceded_by_paren_or_comma(content, match.start()):
             brace_pos = filtered_content.find("{", match.end())
-            minimal_scope = find_minimal_scope(scopes, brace_pos + 1)
+            var_scope_stack = find_scope_stack(scopes, brace_pos + 1)
+            minimal_scope = var_scope_stack[0] if (var_scope_stack and len(var_scope_stack) > 0) else None
 
         else:
-            minimal_scope = find_minimal_scope(scopes, scope_start)
+            var_scope_stack = find_scope_stack(scopes, match.start())
+            minimal_scope = var_scope_stack[0] if (var_scope_stack and len(var_scope_stack) > 0) else None
 
         if minimal_scope is not None and minimal_scope not in scope_stack:
+            continue
+
+        if minimal_scope is not None and pos > minimal_scope[1]:
             continue
 
         # omit variable definitions in viewed file past cursor (variables only, not functions)
@@ -1016,7 +1020,7 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
             "trigger": name,
             "namespace": "{}::".format(os.path.splitext(os.path.basename(source_file))[0]),
             "type": type,
-            "value": "<span style=\"color: #A0A070;\">{}</span>".format(html.escape(value)),
+            "value": "<span style=\"color: #A0A070;\">{}</span>".format(value),
             "doc": doc,
             "language": "User Defined",
             "source_file": source_file,
@@ -1083,14 +1087,19 @@ def extract_user_definitions(view, file_path, location=None):
         variables.extend(internal_variables)
 
         if caching:
-            _user_included_definitions_cache[inclusion_root] = (internal_functions, internal_variables)
+            if inclusion_root in _user_included_definitions_cache:
+                _user_included_definitions_cache[inclusion_root][0].extend(internal_functions)
+                _user_included_definitions_cache[inclusion_root][1].extend(internal_variables)
+            else:
+                _user_included_definitions_cache[inclusion_root] = (internal_functions, internal_variables)
 
         for match in INCLUDE_REGEX.finditer(remove_comments(content)):
 
             if offset and match.start() > offset:
                 continue
 
-            minimal_scope = find_minimal_scope(scopes, match.start())
+            include_scope_stack = find_scope_stack(scopes, match.start())
+            minimal_scope = include_scope_stack[0] if (include_scope_stack and len(include_scope_stack) > 0) else None
 
             if minimal_scope is not None and minimal_scope not in scope_stack:
                 continue
@@ -1115,7 +1124,8 @@ def extract_user_definitions(view, file_path, location=None):
             if offset and match.start() > offset:
                 continue
 
-            minimal_scope = find_minimal_scope(scopes, match.start())
+            friend_scope_stack = find_scope_stack(scopes, match.start())
+            minimal_scope = friend_scope_stack[0] if (friend_scope_stack and len(friend_scope_stack) > 0) else None
 
             if minimal_scope is not None and minimal_scope not in scope_stack:
                 continue
