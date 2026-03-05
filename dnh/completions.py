@@ -25,7 +25,7 @@ ENGINE_NON_FUNCTIONS = [
     { "sig": "others", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "others\n{\n\t$0\n}" },
     { "sig": "do", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "do\n{\n\t$0\n}" },
     { "sig": "else", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "else\n{\n\t$0\n}" },
-    { "sig": "for", "lang": "ph3sx", "kind": sublime.KIND_KEYWORD, "completion": "for (int i = 0, i < n; i++)\n{\n\t$0\n}", "desc": "Standard for-loop: for (int i = 0, i < n; i++)" },
+    { "sig": "for", "lang": "ph3sx", "kind": sublime.KIND_KEYWORD, "completion": "for (int i = 0; i < n; i++)\n{\n\t$0\n}", "desc": "Standard for-loop: for (int i = 0, i < n; i++)" },
     { "sig": "for", "lang": "ph3sx", "kind": sublime.KIND_KEYWORD, "completion": "for each (var item in ref arr)\n{\n\t$0\n}", "desc": "Standard for-each-loop: for each (var item in ref arr)" },
     { "sig": "for", "lang": "ph3sx", "kind": sublime.KIND_KEYWORD, "completion": "for each ((int index, var item) in ref arr)\n{\n\t$0\n}", "desc": "Enumerating for-each-loop: for each ((int index, var item) in ref arr)" },
     { "sig": "each", "lang": "ph3sx", "kind": sublime.KIND_KEYWORD, "completion": "each (var item in ref arr)\n{\n\t$0\n}", "desc": "Standard for-each-loop: for each (var item in ref arr)" },
