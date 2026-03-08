@@ -25,7 +25,7 @@ ENGINE_NON_FUNCTIONS = [
     { "sig": "others", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "others\n{\n\t$0\n}" },
     { "sig": "do", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "do\n{\n\t$0\n}" },
     { "sig": "else", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "else\n{\n\t$0\n}" },
-    { "sig": "for", "lang": "ph3sx", "kind": sublime.KIND_KEYWORD, "completion": "for (int i = 0; i < n; i++)\n{\n\t$0\n}", "desc": "Standard for-loop: for (int i = 0, i < n; i++)" },
+    { "sig": "for", "lang": "ph3sx", "kind": sublime.KIND_KEYWORD, "completion": "for (int i = 0; i < n; i++)\n{\n\t$0\n}", "desc": "Standard for-loop: for (int i = 0; i < n; i++)" },
     { "sig": "for", "lang": "ph3sx", "kind": sublime.KIND_KEYWORD, "completion": "for each (var item in ref arr)\n{\n\t$0\n}", "desc": "Standard for-each-loop: for each (var item in ref arr)" },
     { "sig": "for", "lang": "ph3sx", "kind": sublime.KIND_KEYWORD, "completion": "for each ((int index, var item) in ref arr)\n{\n\t$0\n}", "desc": "Enumerating for-each-loop: for each ((int index, var item) in ref arr)" },
     { "sig": "each", "lang": "ph3sx", "kind": sublime.KIND_KEYWORD, "completion": "each (var item in ref arr)\n{\n\t$0\n}", "desc": "Standard for-each-loop: for each (var item in ref arr)" },
@@ -703,10 +703,9 @@ USER_DEFINED_VARIABLE_REGEX = re.compile(
         (?P<name2>[A-Za-z_]\w*)
     )
     (?:
-        \s*=\s*
-        (?P<value>\[[^\]]*\]|[^;]+)
+        \s*=\s*(?P<value>[^;]+)
     )?
-    \s*# no semicolon
+    \s*;
     """,
     re.VERBOSE | re.DOTALL
 )
@@ -796,16 +795,6 @@ def compute_scope_ranges(text):
     return scopes
 
 
-# def find_minimal_scope(scopes, pos):
-
-#     for start, end in reversed(scopes):
-
-#         if start < pos < end:
-#             return (start, end)
-
-#     return None
-
-
 def find_scope_stack(scopes, pos):
 
     return [
@@ -879,7 +868,7 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
 
     for match in USER_DEFINED_FUNC_TASK_SUB_REGEX.finditer(content):
 
-        if content[match.start()] != filtered_content[match.start()]:
+        if content[match.start("name")] != filtered_content[match.start("name")]:
             continue
 
         function_scope_stack = find_scope_stack(scopes, match.start())
@@ -944,7 +933,7 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
         parameter_scope_stack = find_scope_stack(scopes, brace_pos + 1)
         minimal_parameter_scope = parameter_scope_stack[0] if (parameter_scope_stack and len(parameter_scope_stack) > 0) else None
 
-        if minimal_parameter_scope is not None and minimal_parameter_scope in scope_stack and pos <= minimal_parameter_scope[1]:
+        if minimal_parameter_scope is not None and ((minimal_parameter_scope in scope_stack and pos <= minimal_parameter_scope[1]) or match.start("params") <= pos <= match.end("params")):
             name_type = "non-task"
 
             if len(name) > 0 and name[0] == "_":
@@ -977,11 +966,12 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
 
     for match in USER_DEFINED_VARIABLE_REGEX.finditer(content):
 
-        if content[match.start()] != filtered_content[match.start()]:
+        which_name = "name1" if match.group("name1") else "name2"
+
+        if content[match.start(which_name)] != filtered_content[match.start(which_name)]:
             continue
 
-        matchName1 = match.group("name1")
-        name = matchName1 if matchName1 else match.group("name2")
+        name = match.group(which_name)
 
         if name in seen_parameters:
             continue
@@ -1006,7 +996,7 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
         if len(entry_scope) > 0 and match.start() > pos:
             continue
 
-        type = ("const {}".format(match.group("type1"))) if matchName1 else match.group("type2")
+        type = ("const {}".format(match.group("type1"))) if match.group("name1") else match.group("type2")
 
         raw_doc = match.group("doc") or "No documentation."
         doc = raw_doc.strip()
@@ -1535,7 +1525,7 @@ class DictCollector(sublime_plugin.EventListener):
 
                 plain_params = ", ".join(entry["params"])
 
-                snippet = "{}({});".format(
+                snippet = "{}({})".format(
                     entry["trigger"],
                     plain_params
                 )
@@ -1584,7 +1574,7 @@ class DictCollector(sublime_plugin.EventListener):
 
             for entry in user_function_entries:
 
-                snippet = "{}({});".format(
+                snippet = "{}({})".format(
                     entry["trigger"],
                     ", ".join(entry["params"])
                 )
