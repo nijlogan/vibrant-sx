@@ -7,6 +7,8 @@ import os
 from difflib import SequenceMatcher
 
 
+ENGINE_LANGUAGES = ["ph3", "ph3sx", "ph3sx-zlabel"]
+
 ENGINE_NON_FUNCTIONS = [
     { "sig": "doc", "lang": "vibrant-sx", "kind": sublime.KIND_SNIPPET, "completion": "/***\n$0\n***/" },
     { "sig": "ext", "lang": "vibrant-sx", "kind": sublime.KIND_SNIPPET, "completion": "//// external dependency" },
@@ -20,6 +22,8 @@ ENGINE_NON_FUNCTIONS = [
     { "sig": "sub", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "sub Sub()\n{\n\t$0\n}" },
     { "sig": "task", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "task _Task()\n{\n\t$0\n}" },
     { "sig": "async", "lang": "ph3sx", "kind": sublime.KIND_KEYWORD, "completion": "async\n{\n\t$0\n}" },
+    { "sig": "fcall", "lang": "ph3sx-zlabel", "kind": sublime.KIND_KEYWORD, "completion": "fcall Callback()\n{\n\t$0\n}" },
+    { "sig": "tcall", "lang": "ph3sx-zlabel", "kind": sublime.KIND_KEYWORD, "completion": "tcall _Callback()\n{\n\t$0\n}" },
 
     { "sig": "case", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "case (value)\n{\n\t$0\n}" },
     { "sig": "others", "lang": "ph3", "kind": sublime.KIND_KEYWORD, "completion": "others\n{\n\t$0\n}" },
@@ -56,7 +60,7 @@ ENGINE_NON_FUNCTIONS = [
     { "sig": "int", "lang": "ph3sx", "kind": sublime.KIND_TYPE },
     { "sig": "var", "lang": "ph3", "kind": sublime.KIND_TYPE },
     { "sig": "let", "lang": "ph3", "kind": sublime.KIND_TYPE },
-    { "sig": "real", "lang": "ph3 EXCLUSIVE", "kind": sublime.KIND_TYPE, "desc": "Only available in ph3. Removed as of ph3sx." },
+    { "sig": "real", "lang": "ph3*", "kind": sublime.KIND_TYPE, "desc": "Only available in ph3. Removed as of ph3sx." },
     { "sig": "const", "lang": "ph3sx", "kind": sublime.KIND_TYPE },
     { "sig": "void", "lang": "ph3sx", "kind": sublime.KIND_TYPE },
 
@@ -172,7 +176,7 @@ ENGINE_NON_FUNCTIONS = [
     { "sig": "M_1_PHI", "lang": "ph3sx", "type": "const float", "kind": sublime.KIND_VARIABLE, "value": "0.6180339887498948482" },
 
     { "sig": "ID_INVALID", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE, "value": "-1" },
-    { "sig": "OBJ_BASE", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "OBJ_BASE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "OBJ_PRIMITIVE_2D", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "OBJ_SPRITE_2D", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "OBJ_SPRITE_LIST_2D", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
@@ -494,19 +498,19 @@ ENGINE_NON_FUNCTIONS = [
     { "sig": "PATTERN_ROSE_AIMED", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "PATTERN_BASEPOINT_RESET", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
 
-    { "sig": "TRANSFORM_WAIT", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "TRANSFORM_ADD_SPEED_ANGLE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "TRANSFORM_ANGULAR_MOVE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "TRANSFORM_N_DECEL_CHANGE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "TRANSFORM_GRAPHIC_CHANGE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "TRANSFORM_BLEND_CHANGE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "TRANSFORM_TO_SPEED_ANGLE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "TRANSFORM_ADDPATTERN_A1", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "TRANSFORM_ADDPATTERN_A2", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "TRANSFORM_ADDPATTERN_B1", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "TRANSFORM_ADDPATTERN_B2", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "TRANSFORM_ADDPATTERN_C1", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "TRANSFORM_ADDPATTERN_C2", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "TRANSFORM_WAIT", "lang": "ph3sx*", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "TRANSFORM_ADD_SPEED_ANGLE", "lang": "ph3sx*", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "TRANSFORM_ANGULAR_MOVE", "lang": "ph3sx*", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "TRANSFORM_N_DECEL_CHANGE", "lang": "ph3sx*", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "TRANSFORM_GRAPHIC_CHANGE", "lang": "ph3sx*", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "TRANSFORM_BLEND_CHANGE", "lang": "ph3sx*", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "TRANSFORM_TO_SPEED_ANGLE", "lang": "ph3sx*", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "TRANSFORM_ADDPATTERN_A1", "lang": "ph3sx*", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "TRANSFORM_ADDPATTERN_A2", "lang": "ph3sx*", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "TRANSFORM_ADDPATTERN_B1", "lang": "ph3sx*", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "TRANSFORM_ADDPATTERN_B2", "lang": "ph3sx*", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "TRANSFORM_ADDPATTERN_C1", "lang": "ph3sx*", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "TRANSFORM_ADDPATTERN_C2", "lang": "ph3sx*", "type": "const int", "kind": sublime.KIND_VARIABLE },
 
     { "sig": "STATE_NORMAL", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "STATE_HIT", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
@@ -655,6 +659,12 @@ ENGINE_NON_FUNCTIONS = [
     { "sig": "LOOP_BACKWARD", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "LOOP_FORWARD_BACKWARD", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "LOOP_BACKWARD_FORWARD", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
+
+    { "sig": "SHOTANIM_NONE", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "SHOTANIM_JIGGLE", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "SHOTANIM_SQUISH", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "SHOTANIM_FLUTTER", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "SHOTANIM_DANCE", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
 ]
 
 ENGINE_SIGS = [non_func["sig"] for non_func in ENGINE_NON_FUNCTIONS]
@@ -679,7 +689,7 @@ ENGINE_FUNC_REGEX = re.compile(r"^(\w+::)?([A-Za-z_]\w*)\((.*?)\)$")
 USER_DEFINED_FUNC_TASK_SUB_REGEX = re.compile(
     r"""
     (?:\/\*\*\*(?P<doc>.*?)\*\*\*\/\s*)?
-    (?P<kind>func|function|task|sub)
+    (?P<kind>func|function|task|sub|fcall|tcall)
     (?:<(?P<rtype>[^>]+)>)?
     \s+
     (?P<name>[A-Za-z_]\w*)
@@ -882,7 +892,7 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
         rtype = match.group("rtype")
 
         if not rtype:
-            rtype = "void" if kind in ("task", "sub") else "unspecified"
+            rtype = "void" if kind in ("task", "sub", "fcall", "tcall") else "unspecified"
 
         raw_doc = match.group("doc") or "No documentation."
         doc = raw_doc.strip()
@@ -1776,13 +1786,41 @@ class DnhHoverDocs(sublime_plugin.EventListener):
             sublime.active_window().open_file(href, sublime.ENCODED_POSITION)
 
         language_colors = {
-            "ph3": "deepskyblue",
-            "ph3sx": "hotpink",
-            "ph3sx-zlabel": "crimson",
+            ENGINE_LANGUAGES[0]: "deepskyblue",
+            ENGINE_LANGUAGES[1]: "hotpink",
+            ENGINE_LANGUAGES[2]: "crimson",
             "User Defined": "lightgoldenrodyellow"
         }
 
         language = entry["language"]
+
+        is_exclusive = language[-1] == '*'
+        if is_exclusive:
+            language = language[:-1]
+
+        language_html = ""
+
+        if language in ENGINE_LANGUAGES:
+            eng_index = ENGINE_LANGUAGES.index(language)
+            for lan_index, lan in enumerate(ENGINE_LANGUAGES):
+                if lan_index < eng_index:
+                    continue
+                if is_exclusive and lan_index > eng_index:
+                    continue
+                language_html += """
+                <span style="color: {language_color};">{language}</span>
+                """.format(
+                    language_color=html.escape(language_colors.get(lan, "white")),
+                    language=html.escape(lan)
+                )
+        
+        else:
+            language_html += """
+            <span style="color: {language_color};">{language}</span>
+            """.format(
+                language_color=html.escape(language_colors.get(language, "white")),
+                language=html.escape(language)
+            )
 
         source_html = ""
 
@@ -1836,7 +1874,7 @@ class DnhHoverDocs(sublime_plugin.EventListener):
             html_content = """
             <div style="padding: 10px;">
                 <div style="font-size: 0.875rem; margin-bottom: 4px;">
-                    <span style="opacity:0.6; color: {language_color};"><i>{language}{location}</i></span>
+                    <i>{language}{location}</i>
                 </div>
                 <div style="font-size: 1.05rem; margin-bottom: 6px;">
                     <span style="opacity:0.6;color: #AFFFC0;">{access}</span>
@@ -1847,8 +1885,7 @@ class DnhHoverDocs(sublime_plugin.EventListener):
                 {doc}
             </div>
             """.format(
-                language_color=html.escape(language_colors.get(language, "white")),
-                language=html.escape(language),
+                language=language_html,
                 access="friend " if entry.get("friend") else "",
                 namespace=html.escape(entry.get("namespace", "")),
                 name="<span style=\"color: " + NAME_COLORS.get(name_type, "#40CEDF") + ";\">" + html.escape(entry["trigger"]) + "</span>",
@@ -1878,7 +1915,7 @@ class DnhHoverDocs(sublime_plugin.EventListener):
             html_content = """
             <div style="padding: 10px;">
                 <div style="font-size: 0.875rem; margin-bottom: 4px;">
-                    <span style="opacity:0.6; color: {language_color};"><i>{language}{location}</i></span>
+                    <i>{language}{location}</i>
                 </div>
                 <div style="font-size: 1.05rem; margin-bottom: 6px;">
                     <span style="opacity:0.6;color: #AFFFC0;">{access}</span>
@@ -1889,8 +1926,7 @@ class DnhHoverDocs(sublime_plugin.EventListener):
                 {doc}
             </div>
             """.format(
-                language_color=html.escape(language_colors.get(language, "white")),
-                language=html.escape(language),
+                language=language_html,
                 access="friend " if entry.get("friend") else "",
                 namespace=entry.get("namespace", ""),
                 type=html.escape(entry["type"]),

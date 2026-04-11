@@ -666,6 +666,7 @@
         { "lang": "ph3sx", "sig": "Array::contains(array, value)", "type": "any[] any bool", "doc": "Checks if the given value is present as an element of the given array." },
         { "lang": "ph3sx", "sig": "Array::replace(array, replace_from, replace_with)", "type": "any[] int any any[]", "doc": "Replaces all occurences of the given element with the other in the array." },
         { "lang": "ph3sx", "sig": "Array::remove(array, value)", "type": "any[] any any[]", "doc": "Removes all occurences of the given element in the array." },
+        { "lang": "ph3sx", "sig": "Array::erase(array, position)", "type": "any[] int any[]", "doc": "" },
         
         // Type Casting functions
         
@@ -795,6 +796,9 @@
         
         { "lang": "ph3sx", "sig": "Time::GetSystemTimeMilliS()", "type": "int", "doc": "Returns the time of the system clock in milliseconds." },
         { "lang": "ph3sx", "sig": "Time::GetSystemTimeNanoS()", "type": "int", "doc": "Returns the time of the system clock in nanoseconds." },
+        { "lang": "ph3sx", "sig": "Time::GetStageTimeF()", "type": "int", "doc": "Returns a number with the amount of time that has been elapsed since the start of the main script.\nThe value is in frames." },
+        { "lang": "ph3sx", "sig": "Time::GetCurrentUpdateFps()", "type": "float", "doc": "Returns the current update FPS." },
+        { "lang": "ph3sx", "sig": "Time::GetCurrentRenderFps()", "type": "float", "doc": "Returns the current render FPS." },
         
         // Debugging functions
 
@@ -868,6 +872,7 @@
         { "lang": "ph3sx", "sig": "Math::MatrixLookAtLH(eye, lookat, up)", "type": "float[3] float[3] float[3] float[16]", "doc": "Constructs a left-handed look-at matrix." },
         { "lang": "ph3sx", "sig": "Math::MatrixLookAtRH(eye, lookat, up)", "type": "float[3] float[3] float[3] float[16]", "doc": "Constructs a right-handed look-at matrix." },
         { "lang": "ph3sx", "sig": "Math::MatrixTransformVector()", "type": "float[4] float[16] float[4]", "doc": "Transforms the given (x, y, z, 1) point with the given matrix." },
+        { "lang": "ph3sx", "sig": "Math::MatrixRotate(matrix1, angleX, angleY, angleZ)", "type": "float[16] float float float float[16]", "doc": "Rotates the given matrix in yaw-pitch-roll order (YXZ)." },
         
         // Screen status functions
         
@@ -966,7 +971,8 @@
         { "lang": "ph3sx", "sig": "Object::Obj_IsValueExistsI(obj, key)", "type": "int-(object-id) int bool", "doc": "Obj_IsValueExists with int value key." },
         { "lang": "ph3sx", "sig": "Object::Obj_GetValueCount(obj)", "type": "int-(object-id) int", "doc": "Returns the number of stored values in the object's string-indexed value table." },
         { "lang": "ph3sx", "sig": "Object::Obj_GetValueCountI(obj)", "type": "int-(object-id) int", "doc": "Returns the number of stored values in the object's int-indexed value table." },
-        { "lang": "ph3sx", "sig": "Object::Obj_CopyValueTable(dest, source, mode)", "type": "int-(object-id) int-(object-id) int int", "doc": "Copies the source's object value table to the destination's object value table.\nReturns the source object's value amount.\nAvailable modes:\n0 - Object value table is cleared before the copy.\n1 - Value will be overwritten in case of key conflicts.\n2 - Value will not be overwritten in case of key conflicts." },
+        { "lang": "ph3sx", "sig": "Object::Obj_CopyValueTable(dest, source, mode)", "type": "int-(object-id) int-(object-id) int int", "doc": "Copies the source's object string-indexed value table to the destination's object value table.\nReturns the source object's value amount.\nAvailable modes:\n0 - Object value table is cleared before the copy.\n1 - Value will be overwritten in case of key conflicts.\n2 - Value will not be overwritten in case of key conflicts." },
+        { "lang": "ph3sx", "sig": "Object::Obj_CopyValueTableI(dest, source, mode)", "type": "int-(object-id) int-(object-id) int int", "doc": "Copies the source's object int-indexed value table to the destination's object value table.\nReturns the source object's value amount.\nAvailable modes:\n0 - Object value table is cleared before the copy.\n1 - Value will be overwritten in case of key conflicts.\n2 - Value will not be overwritten in case of key conflicts." },
         
         // Shader Object functions
         
@@ -982,7 +988,7 @@
         { "lang": "ph3sx", "sig": "Render::ObjRender_SetColorHSV(obj, h, s, v)", "type": "int-(render-object-id) int int int void", "doc": "Sets the object's RGB color as a HSV color." },
         { "lang": "ph3sx", "sig": "Render::ObjRender_GetColor(obj)", "type": "int-(render-object-id) int[3]", "doc": "Returns an [r, g, b] array of the object's color." },
         { "lang": "ph3sx", "sig": "Render::ObjRender_GetColorHex(obj)", "type": "int-(render-object-id) int", "doc": "Returns the object's color an XRGB hexadecimal color value." },
-        { "lang": "ph3sx", "sig": "Render::ObjRender_GetAlpha(obj)", "type": "int-(render-object-id)", "doc": "Returns the object's alpha value." },
+        { "lang": "ph3sx", "sig": "Render::ObjRender_GetAlpha(obj)", "type": "int-(render-object-id) int", "doc": "Returns the object's alpha value." },
         
         // Texture Filterng functions
         
@@ -1195,6 +1201,7 @@
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetDelayMode(obj, delayMode, scaleInterpolationMode, alphaInterpolationMode)", "type": "int-(shot-object-id) const-int const-int const-int void", "doc": "Sets the properties of the shot object's delay cloud.\nAvailable delay modes:\nDELAY_DEFAULT:\nDefault Danmakufu delay.\nDELAY_LERP:\nZUN-like delay.\nAvailable delay interpolation modes:\nLERP_LINEAR:\nLinear interpolation.\nLERP_SMOOTH:\nSmooth interpolation.\nLERP_SMOOTHER:\nSmoother interpolation.\nLERP_ACCELERATE:\nAccelerating interpolation.\nLERP_DECELERATE:\nDecelerating interpolation." },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetDelayColor(obj, hex)", "type": "int-(shot-object-id) int void", "doc": "Sets the color of the shot object's delay cloud as an ARGB hexadecimal color value.\nSet to 0 to revert to using the shot data's delay color." },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetDelayColoringEnable(obj, enable)", "type": "int-(shot-object-id) bool void", "doc": "When set to true, enables the object color to affect the shot object's delay cloud." },
+        { "lang": "ph3sx", "sig": "Shot::ObjShot_SetDelayScalingEnable(obj, enable)", "type": "int-(shot-object-id) bool void", "doc": "When set to true, enables the object scale to affect the shot object's delay cloud." },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetGrazeInvalidFrame(obj, frame)", "type": "int-(shot-object-id) int void", "doc": "Sets the shot object's graze cooldown frame.\nAfter being grazed, the shot will be put on graze cooldown, wherein it cannot be grazed for the duration.\nFor lasers, the default value is 20.\nFor normal shots, the default value is 2147483647." },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetGrazeFrame(obj, frame)", "type": "int-(shot-object-id) int void", "doc": "Sets the shot object's graze frame.\nInternally, this value is reset to the graze invalid frame every time a graze is performed.\nThis value decreases by 1 every frame, and the shot object is eligible for a graze if it is equal to or less than 0." },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_IsValidGraze(obj)", "type": "int-(shot-object-id) bool", "doc": "Returns whether the shot object is currently able to be grazed." },
@@ -1203,6 +1210,8 @@
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetFixedAngle(obj, enable)", "type": "int-(shot-object-id) bool void", "doc": "If set to true, the shot will not visually rotate along its movement angle.\nThe default value is specified in the graphic's shot data as \"fixed_angle\", this function allows you to override that value." },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetSpinAngularVelocity(obj, wVel)", "type": "int-(shot-object-id) real void", "doc": "The default spin speed is specified in the graphic's shot data as \"angular_velocity\", this function allows you to override that value." },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetDelayAngularVelocity(obj, wVel)", "type": "int-(shot-object-id) real void", "doc": "Sets the Z angle spin speed of the shot's delay cloud.\nThe default delay spin speed is 0." },
+
+        { "lang": "ph3sx", "sig": "Shot::ObjLaser_SetItemDistance(obj, distance)", "type": "int-(shot-object-id) real void", "doc": "" },
         
         // Straight Laser Object functions
         
@@ -1239,7 +1248,7 @@
         { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_SetParentObject(obj, parent)", "type": "int-(pattern-shot-object-id) int-(move-object-id) void", "doc": "Sets the parent object of the given shot pattern object." },
         { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_SetPatternType(obj, patternType)", "type": "int-(pattern-shot-object-id) const-int void", "doc": "Sets the firing pattern of the given shot pattern object.\nAvailable pattern types:\nPATTERN_FAN\nPATTERN_FAN_AIMED\nPATTERN_RING\nPATTERN_RING_AIMED\nPATTERN_ARROW\nPATTERN_ARROW_AIMED\nPATTERN_POLYGON\n- [way]: Number of polygon vertices.\n- [stack]: Number of shots per sides.\n- [angle argument]: Edge skip, should normally be 1. Other values will result in polygrams.\n- [speed argument]: No effect.\nPATTERN_POLYGON_AIMED\nPATTERN_ELLIPSE\n- [stack]: No effect.\n- [angle argument]: Angle of the ellipse. (Not of the shots)\n- [base speed]: Max speed at the ends of the primary axis.\n- [speed argument]: Max speed at the ends of the secondary axis.\nPATTERN_ELLIPSE_AIMED\nPATTERN_SCATTER_ANGLE\nPATTERN_SCATTER_SPEED\nPATTERN_SCATTER\nPATTERN_LINE\nPATTERN_ROSE\n- [way]: Number of \"petals\".\n- [stack]: Number of shots per petals." },
         { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_SetShotType(obj, shotType)", "type": "int-(pattern-shot-object-id) const-int void", "doc": "Sets the shot type of the given shot pattern object.\nSupported types:\nOBJ_SHOT\nOBJ_LOOSE_LASER\nOBJ_CURVE_LASER" },
-        { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_SetInitialBlendMode(obj, blendType)", "type": "int-(pattern-shot-object-id) const-int void", "doc": "Sets the initial blend type of the shots.\nSee ObjRender_SetBlendType for the list of blend types." },
+        { "lang": "ph3sx*", "sig": "Shot::ObjPatternShot_SetInitialBlendMode(obj, blendType)", "type": "int-(pattern-shot-object-id) const-int void", "doc": "Sets the initial blend type of the shots.\nSee ObjRender_SetBlendType for the list of blend types." },
         { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_SetShotCount(obj, way, stack)", "type": "int-(pattern-shot-object-id) int int void", "doc": "Sets the shot way and shot stack of the given shot pattern object." },
         { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_SetSpeed(obj, baseSpeed, speedArg)", "type": "int-(pattern-shot-object-id) real real void", "doc": "Sets the shot speed and argument of the given shot pattern object." },
         { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_SetAngle(obj, baseAngle, angleArg)", "type": "int-(pattern-shot-object-id) real real void", "doc": "Sets the shot angle and argument of the given shot pattern object." },
@@ -1247,12 +1256,12 @@
         { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_SetBasePointOffset(obj, x, y)", "type": "int-(pattern-shot-object-id) real real void", "doc": "Sets the firing position offset of the given shot pattern object from its base point." },
         { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_SetBasePointOffsetCircle(obj, angle, radius)", "type": "int-(pattern-shot-object-id) real real void", "doc": "Sets the firing position offset in a circular manner of the given shot pattern object from its base point." },
         { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_SetShootRadius(obj, radius)", "type": "int-(pattern-shot-object-id) real void", "doc": "Causes the shots to be fired a certain radius away from their base points." },
-        { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_SetDelay(obj, delay)", "type": "int-(pattern-shot-object-id) int void", "doc": "Sets the shot delay of the given shot pattern object." },
-        { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_SetGraphic(obj, graphic)", "type": "int-(pattern-shot-object-id) const-int void", "doc": "Sets the shot image ID of the given shot pattern object." },
+        { "lang": "ph3sx*", "sig": "Shot::ObjPatternShot_SetDelay(obj, delay)", "type": "int-(pattern-shot-object-id) int void", "doc": "Sets the shot delay of the given shot pattern object." },
+        { "lang": "ph3sx*", "sig": "Shot::ObjPatternShot_SetGraphic(obj, graphic)", "type": "int-(pattern-shot-object-id) const-int void", "doc": "Sets the shot image ID of the given shot pattern object." },
         { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_SetLaserParameter(obj, width, length)", "type": "int-(pattern-shot-object-id) real real void", "doc": "Sets the length and width of the given shot pattern object.\nHas no effect if the pattern is firing normal shots." },
         { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_CopySettings(dest, source)", "type": "int-(pattern-shot-object-id) int-(pattern-shot-object-id) void", "doc": "Copies the settings of a shot pattern object to another." },
-        { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_AddTransform(obj, transformType, args..)", "type": "int-(pattern-shot-object-id) const-int any.. void", "doc": "Adds a transformation to the shot pattern object.\nTransforms arguments will be designated, in order: [arg0], [arg1], [arg2], etc...\nAvailable transformations are:\nTRANSFORM_WAIT (argc = 1)\n- Delays the next transformation for [arg0] frames.\nTRANSFORM_ADD_SPEED_ANGLE (argc = 4)\n- Waits for [arg1] frames. (Does not delay the next transformation)\n- For [arg0] frames, sets acceleration to [arg2].\n- For [arg0] frames, sets angular velocity to [arg3].\nTRANSFORM_ANGULAR_MOVE (argc = 3)\n- For [arg0] frames, sets angular velocity to [arg1].\n- Sets shot graphic \"spin\" to [arg2].\nTRANSFORM_N_DECEL_CHANGE (argc = 5)\n- For [arg1] times, decelerates/accelerates the shot to a complete halt in [arg0] frames. (See: Aunn's first spell)\n- Movement will then change depending on [arg2].\n- 0: Changes the movement angle to [arg4].\n- 1: Increments the movement angle by [arg4].\n- 2: Aims to the player with an added randomness factor of -[arg4] to [arg4].\n- 3: Aims to the player with an increment of [arg4].\n- 4: Angle becomes random.\n- 5, other: No angle change.\n- All modes sets the speed to [arg3].\n- Delay the next transformation by ([arg0] * [arg1]) frames.\nTRANSFORM_GRAPHIC_CHANGE (argc = 1)\n- Changes the shot graphic to [arg0].\nTRANSFORM_BLEND_CHANGE (argc = 1)\n- Changes the shot blend type to [arg0].\nTRANSFORM_TO_SPEED_ANGLE (argc = 3)\n- Gradually changes the shot's speed to [arg1] in [arg0] frames.\n- Gradually changes the shot's angle to [arg2] in [arg0] frames.\n- Using TOPLAYER_CHANGE will aim the shot to the player object.\n- NO_CHANGE can be used for [arg1] and [arg2].\nTRANSFORM_ADDPATTERN_A1 (argc = 3)\n- Applies [ObjMove_AddPatternA1(obj, [arg0], [arg1], [arg2])]\nTRANSFORM_ADDPATTERN_A2 (argc = 8)\n- Applies [ObjMove_AddPatternA4(obj, [arg0], [arg1], [arg2], [arg3], [arg4], [arg5], [arg6], [arg7])]\nTRANSFORM_ADDPATTERN_B1 (argc = 3)\n- Applies [ObjMove_AddPatternB1(obj, [arg0], [arg1], [arg2])]\nTRANSFORM_ADDPATTERN_B2 (argc = 8)\n- Applies [ObjMove_AddPatternB3(obj, [arg0], [arg1], [arg2], [arg3], [arg4], [arg5], [arg6], [arg7])]\nTRANSFORM_ADDPATTERN_C1 (argc = 3)\n- Applies [ObjMove_AddPatternC1(obj, [arg0], [arg1], [arg2])]\nTRANSFORM_ADDPATTERN_C2 (argc = 10)\n- Applies [ObjMove_AddPatternC3(obj, [arg0], [arg1], [arg2], [arg3], [arg4], [arg5], [arg6], [arg7], [arg8], [arg9])]" },
-        { "lang": "ph3sx", "sig": "Shot::ObjPatternShot_SetTransform(obj, transformIndex, transformType, args..)", "type": "int-(pattern-shot-object-id) int const-int any.. void", "doc": "Sets transformation to the specified transform index." },
+        { "lang": "ph3sx*", "sig": "Shot::ObjPatternShot_AddTransform(obj, transformType, args..)", "type": "int-(pattern-shot-object-id) const-int any.. void", "doc": "Adds a transformation to the shot pattern object.\nTransforms arguments will be designated, in order: [arg0], [arg1], [arg2], etc...\nAvailable transformations are:\nTRANSFORM_WAIT (argc = 1)\n- Delays the next transformation for [arg0] frames.\nTRANSFORM_ADD_SPEED_ANGLE (argc = 4)\n- Waits for [arg1] frames. (Does not delay the next transformation)\n- For [arg0] frames, sets acceleration to [arg2].\n- For [arg0] frames, sets angular velocity to [arg3].\nTRANSFORM_ANGULAR_MOVE (argc = 3)\n- For [arg0] frames, sets angular velocity to [arg1].\n- Sets shot graphic \"spin\" to [arg2].\nTRANSFORM_N_DECEL_CHANGE (argc = 5)\n- For [arg1] times, decelerates/accelerates the shot to a complete halt in [arg0] frames. (See: Aunn's first spell)\n- Movement will then change depending on [arg2].\n- 0: Changes the movement angle to [arg4].\n- 1: Increments the movement angle by [arg4].\n- 2: Aims to the player with an added randomness factor of -[arg4] to [arg4].\n- 3: Aims to the player with an increment of [arg4].\n- 4: Angle becomes random.\n- 5, other: No angle change.\n- All modes sets the speed to [arg3].\n- Delay the next transformation by ([arg0] * [arg1]) frames.\nTRANSFORM_GRAPHIC_CHANGE (argc = 1)\n- Changes the shot graphic to [arg0].\nTRANSFORM_BLEND_CHANGE (argc = 1)\n- Changes the shot blend type to [arg0].\nTRANSFORM_TO_SPEED_ANGLE (argc = 3)\n- Gradually changes the shot's speed to [arg1] in [arg0] frames.\n- Gradually changes the shot's angle to [arg2] in [arg0] frames.\n- Using TOPLAYER_CHANGE will aim the shot to the player object.\n- NO_CHANGE can be used for [arg1] and [arg2].\nTRANSFORM_ADDPATTERN_A1 (argc = 3)\n- Applies [ObjMove_AddPatternA1(obj, [arg0], [arg1], [arg2])]\nTRANSFORM_ADDPATTERN_A2 (argc = 8)\n- Applies [ObjMove_AddPatternA4(obj, [arg0], [arg1], [arg2], [arg3], [arg4], [arg5], [arg6], [arg7])]\nTRANSFORM_ADDPATTERN_B1 (argc = 3)\n- Applies [ObjMove_AddPatternB1(obj, [arg0], [arg1], [arg2])]\nTRANSFORM_ADDPATTERN_B2 (argc = 8)\n- Applies [ObjMove_AddPatternB3(obj, [arg0], [arg1], [arg2], [arg3], [arg4], [arg5], [arg6], [arg7])]\nTRANSFORM_ADDPATTERN_C1 (argc = 3)\n- Applies [ObjMove_AddPatternC1(obj, [arg0], [arg1], [arg2])]\nTRANSFORM_ADDPATTERN_C2 (argc = 10)\n- Applies [ObjMove_AddPatternC3(obj, [arg0], [arg1], [arg2], [arg3], [arg4], [arg5], [arg6], [arg7], [arg8], [arg9])]" },
+        { "lang": "ph3sx*", "sig": "Shot::ObjPatternShot_SetTransform(obj, transformIndex, transformType, args..)", "type": "int-(pattern-shot-object-id) int const-int any.. void", "doc": "Sets transformation to the specified transform index." },
         
         // Collision Object functions
         
@@ -1440,7 +1449,7 @@
         { "lang": "ph3sx-zlabel", "sig": "Spline::ObjSpline_LerpArc(obj, fraction)", "type": "int-(spline-object-id) float float[6]", "doc": "Returns the position and tangent of spline object when linearly interpolating along its arc length by the fraction.\nUse this one if you want constant speed of traversal along the spline.\nReturn value is formatted as [posX, posY, posZ, velX, velY, velZ]." },
 
         { "lang": "ph3sx-zlabel", "sig": "Spring::ObjSpring_Create()", "type": "int-(spring-object-id)", "doc": "Creates a spring object and returns its object ID.\nCan be used to simulate a spring mass system in both 2D and 3D." },
-        { "lang": "ph3sx-zlabel", "sig": "Spring::ObjSpring_Step(obj)", "type": "int-(spring-object-id) void", "doc": "Simulates the spring mass system for one step of delta time.\nTo simulate the system in real time, call this function once every frame." },
+        // { "lang": "ph3sx-zlabel", "sig": "Spring::ObjSpring_Step(obj)", "type": "int-(spring-object-id) void", "doc": "Simulates the spring mass system for one step of delta time.\nTo simulate the system in real time, call this function once every frame." },
         { "lang": "ph3sx-zlabel", "sig": "Spring::ObjSpring_SetGravity(obj, gravity)", "type": "int-(spring-object-id) float void", "doc": "Sets the global gravity value for the spring mass system." },
         { "lang": "ph3sx-zlabel", "sig": "Spring::ObjSpring_SetGlobalDrag(obj, drag)", "type": "int-(spring-object-id) float void", "doc": "Sets the global drag coefficient for the spring mass system." },
         { "lang": "ph3sx-zlabel", "sig": "Spring::ObjSpring_AddNode(obj, x, y, z, velX, velY, velZ, mass, canMove)", "type": "int-(spring-object-id) float float float float float float float bool void", "doc": "Adds a node to the spring object with the values specified.\nThe flag \"canMove\" when set to false will lock the node in place, and it can only be moved manually." },
@@ -1499,7 +1508,77 @@
         { "lang": "ph3sx-zlabel", "sig": "Move::ObjMoveParent_SetLaserRotationEnable(obj, enable)", "type": "int-(move-parent-object-id) bool void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Move::ObjMoveParent_SetTransformOrder(obj, orderType)", "type": "int-(move-parent-object-id) const-int void", "doc": "Available orders are ORDER_ANGLE_SCALE and ORDER_SCALE_ANGLE.\nDetermines which transformation applies before the other." },
         { "lang": "ph3sx-zlabel", "sig": "Move::ObjMoveParent_ApplyTransformation(obj)", "type": "int-(move-parent-object-id) void", "doc": "" },
-        { "lang": "ph3sx-zlabel", "sig": "Move::ObjMoveParent_ResetTransformation(obj)", "type": "int-(move-parent-object-id) void", "doc": "" }
+        { "lang": "ph3sx-zlabel", "sig": "Move::ObjMoveParent_ResetTransformation(obj)", "type": "int-(move-parent-object-id) void", "doc": "" },
+
+        // missed
+
+        { "lang": "ph3sx-zlabel", "sig": "Type::as_x(array, type)", "type": "any int any", "doc": "Casts to the given type, then returns the result.\nSupported types: VAR_INT, VAR_FLOAT, VAR_BOOL, VAR_CHAR" },
+
+        { "lang": "ph3sx-zlabel", "sig": "Math::apo(corners)", "type": "int float", "doc": "Computes apothem (incircle radius) of a regular polygon with radius 1 and the specified number of corners." },
+
+        { "lang": "ph3sx-zlabel", "sig": "Array::generate(size, fill)", "type": "int any any[]", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Array::reverse(array)", "type": "any[] any[]", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Array::sort(array)", "type": "any[] any[]", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Array::insert(array, position, value)", "type": "any[] int any any[]", "doc": "" },
+
+        // since update branch
+
+        { "lang": "ph3sx-zlabel", "sig": "Text::ObjText_SetAtlas(obj, name)", "type": "int-(text-object-id) string void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Text::LoadGlyphs()", "type": "void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Text::LoadGlyphs(path)", "type": "string void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Text::SaveGlyphs()", "type": "void", "doc": "" },
+
+        { "lang": "ph3sx-zlabel", "sig": "Shader::ObjShader_GetParameterPointer(obj, name)", "type": "int-(shader-object-id) string int", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shader::ObjShader_SetFloatPtr(obj, pointer, value)", "type": "int-(shader/render-object-id) int real void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shader::ObjShader_SetFloatArrayPtr(obj, pointer, value)", "type": "int-(shader/render-object-id) int real[] void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shader::ObjShader_SetTexturePtr(obj, pointer, path)", "type": "int-(shader/render-object-id) int string void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shader::ObjShader_SetIntPtr(obj, pointer, value)", "type": "int-(shader/render-object-id) int int void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shader::ObjShader_SetIntArrayPtr(obj, pointer, value)", "type": "int-(shader/render-object-id) int int[] void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shader::ObjShader_SetVectorPtr(obj, pointer, x, y, z, w)", "type": "int-(shader/render-object-id) int float float float float void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shader::ObjShader_SetMatrixPtr(obj, pointer, matrix)", "type": "int-(shader/render-object-id) int float[16] void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shader::ObjShader_SetMatrixArrayPtr(obj, pointer, matrices)", "type": "int-(shader/render-object-id) int float[][16]", "doc": "" },
+
+        { "lang": "ph3sx-zlabel", "sig": "Move::ObjMove_AnchorToSpringNode(obj, objSpring, index, aim)", "type": "int-(shot-object-id) int-(spring-object-id) int bool void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Move::ObjMove_RemoveSpringAnchor(obj, objSpring)", "type": "int-(shot-object-id) int-(spring-object-id) void", "doc": "" },
+        
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjStLaser_AnchorToSpring(obj, objSpring, index1, index2)", "type": "int-(shot-object-id) int-(spring-object-id) int int void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjStLaser_RemoveSpringAnchor(obj, objSpring)", "type": "int-(shot-object-id) int-(spring-object-id) void", "doc": "" },
+
+        { "lang": "ph3sx-zlabel", "sig": "Move::ObjMove_AddPatternE1(obj, frame, objSpline, duration, interpolationType, arc)", "type": "int-(move-object-id) int int-(spline-object-id) int const-int bool void", "doc": "" },
+
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjShot_FadeDelete(obj)", "type": "int-(shot-object-id) bool", "doc": "Fades out the shot object and deletes it.\nReturns true if shot was not already fading." },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjShot_IsDeleting(obj)", "type": "int-(shot-object-id) bool", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjShot_SetAnimation(obj, animMode, duration, f1, f2, f3, f4)", "type": "int-(shot-object-id) const-int int float float float float void", "doc": "Available animations are:\nSHOTANIM_NONE\nSHOTANIM_JIGGLE\nSHOTANIM_SQUISH\nSHOTANIM_FLUTTER\nSHOTANIM_DANCE" },
+
+        { "lang": "ph3sx-zlabel", "sig": "Object::Obj_Clone(obj, deepCopy)", "type": "int-(object-id) bool int-(object-id)", "doc": "" },
+
+        { "lang": "ph3sx-zlabel", "sig": "Object::Obj_SetDeleteCallback(obj, funcptr, args..)", "type": "int-(object-id) int-(pointer) any.. void", "doc": "Invokes the engine function, fcall, or tcall associated with the provided function pointer with the provided arguments when the object is deleted." },
+        { "lang": "ph3sx-zlabel", "sig": "Enemy::ObjEnemy_SetDeathCallback(obj, funcptr, args..)", "type": "int-(object-id) int-(pointer) any.. void", "doc": "Invokes the engine function, fcall, or tcall associated with the provided function pointer with the provided arguments when the enemy object's life reaches 0." },
+
+        { "lang": "ph3sx-zlabel", "sig": "Math::rand_sign()", "type": "int", "doc": "Randomly returns 1 or -1 with equal probability." },
+        { "lang": "ph3sx-zlabel", "sig": "Math::prand_sign()", "type": "int", "doc": "Randomly returns 1 or -1 with equal probability using the prand() function." },
+
+        { "lang": "ph3sx-zlabel", "sig": "Math::IsIntersected_Point_AmorphousPolygram(pointX, pointY, polygonX, polygonY, radius, corners, angle, inning, smoothing)", "type": "real real real real real int real real real bool", "doc": "Returns true if the given point intersects with the amorphous polygram." },
+        { "lang": "ph3sx-zlabel", "sig": "Math::GetSlice_AmorphousPolygram(sampleCount, corners, inning, smoothing)", "type": "int int real real float[]", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Math::GetSlice_EquidistantAmorphousPolygram(precision, sampleCount, corners, inning, smoothing)", "type": "int int int real real float[]", "doc": "" },
+
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_Fire(obj, wait, iterations, funcptrFire, funcptrTick)", "type": "int-(pattern-shot-object-id) int int int-(pointer-fcall[0:3]) int-(pointer-fcall[0:2]) void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_ClearWaiting(obj)", "type": "int-(pattern-shot-object-id) void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetAutoDelete(obj, delete)", "type": "int-(pattern-shot-object-id) bool void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetShotParent(obj, moveParent)", "type": "int-(pattern-shot-object-id) int-(move-parent-object-id) void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_GetParentObject(obj)", "type": "int-(pattern-shot-object-id) int-(move-parent-object-id)", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetShotCount(obj, way, stack, wayCutoff, interlace)", "type": "int-(pattern-shot-object-id) int int int bool void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetWait(obj, wayWait, stackWait)", "type": "int-(pattern-shot-object-id) int int void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetSpinParameter(obj, wvel, fixedAngle)", "type": "int-(pattern-shot-object-id) real bool void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetShootRadius(obj, radius, offsetRadius, interpolationType)", "type": "int-(pattern-shot-object-id) real real const-int void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetSpeed(obj, baseSpeed, speedArg, offsetSpeed, interpolationType)", "type": "int-(pattern-shot-object-id) real real real const-int void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetAngle(obj, baseAngle, angleArg, offsetAngle)", "type": "int-(pattern-shot-object-id) real real real void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetScale(obj, wayScale, stackScale, interpolationType)", "type": "int-(pattern-shot-object-id) real real const-int void", "doc": "" },
+
+        { "lang": "ph3sx-zlabel", "sig": "Mesh::ObjMesh_Load(obj, path, vertexCopy)", "type": "int-(mesh-object-id) string bool void", "doc": "Overload for toggling whether or not to create additional D3DFMT_A16B16G16R16 copies of mesh textures to allow for use of tex2Dlod on mesh base textures in sampler0 in vertex shaders." },
+        { "lang": "ph3sx-zlabel", "sig": "Mesh::LoadMesh(path, vertexCopy)", "type": "string bool bool", "doc": "Overload for toggling whether or not to create additional D3DFMT_A16B16G16R16 copies of mesh textures to allow for use of tex2Dlod on mesh base textures in sampler0 in vertex shaders." },
+
+        { "lang": "ph3sx-zlabel", "sig": "Shader::LoadShader(path, fromAscii)", "type": "string bool bool", "doc": "Overload for toggling whether to compile shader from ASCII and ignore any existing .fxo file, regenerating .fxo file." },
 
         // ObjSpriteAnim (all this I would be unable to document)
 
