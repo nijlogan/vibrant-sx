@@ -51,6 +51,7 @@
         "scope": "#00F0F0",
 		"yield": "#F000F0",
         "docs": "#A0A070",
+        "funcptr": "#ffbffe",
     },
     "globals":
     {
@@ -114,6 +115,11 @@
             "name": "Keyword",
             "scope": "keyword - (source.c keyword.operator | source.c++ keyword.operator | source.objc keyword.operator | source.objc++ keyword.operator), keyword.operator.word, source.ruby keyword.declaration",
             "foreground": "var(red2)"
+        },
+        {
+            "name": "Function pointer",
+            "scope": "fptr - (source.c fptr.operator | source.c++ fptr.operator | source.objc fptr.operator | source.objc++ fptr.operator), fptr.operator.word, source.ruby fptr.declaration",
+            "foreground": "var(funcptr)"
         },
         {
             "name": "Annotation Punctuation",
