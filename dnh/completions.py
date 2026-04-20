@@ -58,6 +58,9 @@ ENGINE_NON_FUNCTIONS = [
     { "sig": "float", "lang": "ph3sx", "kind": sublime.KIND_TYPE },
     { "sig": "string", "lang": "ph3sx", "kind": sublime.KIND_TYPE },
     { "sig": "int", "lang": "ph3sx", "kind": sublime.KIND_TYPE },
+    { "sig": "object", "lang": "ph3sx-zlabel", "kind": sublime.KIND_TYPE },
+    { "sig": "ptr", "lang": "ph3sx-zlabel", "kind": sublime.KIND_TYPE },
+    { "sig": "fn", "lang": "ph3sx-zlabel", "kind": sublime.KIND_TYPE },
     { "sig": "var", "lang": "ph3", "kind": sublime.KIND_TYPE },
     { "sig": "let", "lang": "ph3", "kind": sublime.KIND_TYPE },
     { "sig": "real", "lang": "ph3*", "kind": sublime.KIND_TYPE, "desc": "Only available in ph3. Removed as of ph3sx." },
@@ -153,6 +156,8 @@ ENGINE_NON_FUNCTIONS = [
     { "sig": "LERP_SMOOTHER", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "LERP_ACCELERATE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "LERP_DECELERATE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "LERP_RUBBERBAND", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "LERP_BELL", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
 
     { "sig": "M_PI", "lang": "ph3sx", "type": "const float", "kind": sublime.KIND_VARIABLE, "value": "3.14159265358979323846" },
     { "sig": "M_PI_2", "lang": "ph3sx", "type": "const float", "kind": sublime.KIND_VARIABLE, "value": "1.57079632679489661923" },
@@ -182,7 +187,7 @@ ENGINE_NON_FUNCTIONS = [
     { "sig": "OBJ_SPRITE_LIST_2D", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "OBJ_PRIMITIVE_3D", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "OBJ_SPRITE_3D", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
-    { "sig": "OBJ_TRAJECTORY_3D", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "OBJ_TRAJECTORY_3D", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE, "desc": "Only available in ph3 and ph3sx. Removed as of ph3sx-zlabel." },
     { "sig": "OBJ_PARTICLE_LIST_2D", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "OBJ_PARTICLE_LIST_3D", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "OBJ_SHADER", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
@@ -637,6 +642,16 @@ ENGINE_NON_FUNCTIONS = [
     { "sig": "MOVE_XY", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "MOVE_XY_ANGLE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "MOVE_LINE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "MOVE_CURVE", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "MOVE_SPLINE", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
+
+    { "sig": "MOVE_LINE_SPEED", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "MOVE_LINE_FRAME", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "MOVE_LINE_WEIGHT", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
+
+    { "sig": "MOVE_CURVE_QUADRATIC_BEZIER", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "MOVE_CURVE_CUBIC_BEZIER", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "MOVE_CURVE_HERMITE", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
 
     { "sig": "TOPLAYER_CHANGE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "NO_CHANGE", "lang": "ph3", "type": "const int", "kind": sublime.KIND_VARIABLE },
@@ -688,7 +703,7 @@ ENGINE_FUNC_REGEX = re.compile(r"^(\w+::)?([A-Za-z_]\w*)\((.*?)\)$")
 
 USER_DEFINED_FUNC_TASK_SUB_REGEX = re.compile(
     r"""
-    (?:\/\*\*\*(?P<doc>.*?)\*\*\*\/\s*)?
+    (?:\/\*\*\*(?P<doc>(?:(?!\/\*\*\*).)*?)\*\*\*\/\s*)?
     (?P<kind>func|function|task|sub|fcall|tcall)
     (?:<(?P<rtype>[^>]+)>)?
     \s+
@@ -703,13 +718,13 @@ USER_DEFINED_FUNC_TASK_SUB_REGEX = re.compile(
 
 USER_DEFINED_VARIABLE_REGEX = re.compile(
     r"""
-    (?:\/\*\*\*(?P<doc>.*?)\*\*\*\/\s*)?
+    (?:\/\*\*\*(?P<doc>(?:(?!\/\*\*\*).)*?)\*\*\*\/\s*)?
     (?:
         const\s+
-        (?:(?P<type1>\b(?:bool|char|float|string|int|var|let|real)\b(?:\[\])*)\s+)?
+        (?:(?P<type1>\b(?:bool|char|float|string|int|object|ptr|fn|var|let|real)\b(?:\[\])*)\s+)?
         (?P<name1>[A-Za-z_]\w*)
       |
-        (?P<type2>\b(?:bool|char|float|string|int|var|let|real)\b(?:\[\])*)\s+
+        (?P<type2>\b(?:bool|char|float|string|int|object|ptr|fn|var|let|real)\b(?:\[\])*)\s+
         (?P<name2>[A-Za-z_]\w*)
     )
     (?:

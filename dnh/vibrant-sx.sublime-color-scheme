@@ -51,7 +51,7 @@
         "scope": "#00F0F0",
 		"yield": "#F000F0",
         "docs": "#A0A070",
-        "funcptr": "#ffbffe",
+        "funcptr": "#FFBFFE",
     },
     "globals":
     {
@@ -410,6 +410,12 @@
 			"font_style": "italic",
 			"foreground": "var(var-type)",
 		},
+        {
+            "name": "Special Type",
+            "scope": "dnh.special-type",
+            "font_style": "bold italic",
+            "foreground": "var(var-type)",
+        },
         {
             "name": "Built-in Constants",
             "scope": "dnh.constant",
