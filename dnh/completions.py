@@ -58,9 +58,10 @@ ENGINE_NON_FUNCTIONS = [
     { "sig": "float", "lang": "ph3sx", "kind": sublime.KIND_TYPE },
     { "sig": "string", "lang": "ph3sx", "kind": sublime.KIND_TYPE },
     { "sig": "int", "lang": "ph3sx", "kind": sublime.KIND_TYPE },
-    { "sig": "object", "lang": "ph3sx-zlabel", "kind": sublime.KIND_TYPE },
-    { "sig": "ptr", "lang": "ph3sx-zlabel", "kind": sublime.KIND_TYPE },
-    { "sig": "fn", "lang": "ph3sx-zlabel", "kind": sublime.KIND_TYPE },
+    { "sig": "object", "lang": "ph3sx-zlabel", "kind": sublime.KIND_TYPE, "desc": "For objects, to mark them as distinct from int." },
+    { "sig": "ptr", "lang": "ph3sx-zlabel", "kind": sublime.KIND_TYPE, "desc": "For map pointers (common data, shaders...), to mark them as distinct from int." },
+    { "sig": "fn", "lang": "ph3sx-zlabel", "kind": sublime.KIND_TYPE, "desc": "For function pointers (function, task, sub, fcall, tcall), to mark them as distinct from int." },
+    { "sig": "tenv", "lang": "ph3sx-zlabel", "kind": sublime.KIND_TYPE, "desc": "For task return value, which is the task's environment, to mark it as distinct from int." },
     { "sig": "var", "lang": "ph3", "kind": sublime.KIND_TYPE },
     { "sig": "let", "lang": "ph3", "kind": sublime.KIND_TYPE },
     { "sig": "real", "lang": "ph3*", "kind": sublime.KIND_TYPE, "desc": "Only available in ph3. Removed as of ph3sx." },
@@ -492,6 +493,8 @@ ENGINE_NON_FUNCTIONS = [
     { "sig": "PATTERN_ARROW_AIMED", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "PATTERN_POLYGON", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "PATTERN_POLYGON_AIMED", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "PATTERN_AMORPHOUS", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
+    { "sig": "PATTERN_AMORPHOUS_AIMED", "lang": "ph3sx-zlabel", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "PATTERN_ELLIPSE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "PATTERN_ELLIPSE_AIMED", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
     { "sig": "PATTERN_SCATTER_ANGLE", "lang": "ph3sx", "type": "const int", "kind": sublime.KIND_VARIABLE },
@@ -721,10 +724,10 @@ USER_DEFINED_VARIABLE_REGEX = re.compile(
     (?:\/\*\*\*(?P<doc>(?:(?!\/\*\*\*).)*?)\*\*\*\/\s*)?
     (?:
         const\s+
-        (?:(?P<type1>\b(?:bool|char|float|string|int|object|ptr|fn|var|let|real)\b(?:\[\])*)\s+)?
+        (?:(?P<type1>\b(?:bool|char|float|string|int|object|ptr|fn|tenv|var|let|real)\b(?:\[\])*)\s+)?
         (?P<name1>[A-Za-z_]\w*)
       |
-        (?P<type2>\b(?:bool|char|float|string|int|object|ptr|fn|var|let|real)\b(?:\[\])*)\s+
+        (?P<type2>\b(?:bool|char|float|string|int|object|ptr|fn|tenv|var|let|real)\b(?:\[\])*)\s+
         (?P<name2>[A-Za-z_]\w*)
     )
     (?:
@@ -907,7 +910,7 @@ def parse_definitions_from_content(content, pos=0, source_file=None, entry_scope
         rtype = match.group("rtype")
 
         if not rtype:
-            rtype = "void" if kind in ("task", "sub", "fcall", "tcall") else "unspecified"
+            rtype = "void" if kind in ("sub", "fcall", "tcall") else ("tenv" if kind == "task" else "unspecified")
 
         raw_doc = match.group("doc") or "No documentation."
         doc = raw_doc.strip()

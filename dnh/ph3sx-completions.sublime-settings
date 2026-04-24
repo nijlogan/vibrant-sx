@@ -1188,6 +1188,7 @@
         
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetOwnerType(obj, ownerType)", "type": "int-(shot-object-id) const-int void", "doc": "Sets the shot object's owner type.\nAvailable types are:\nOWNER_PLAYER\nOWNER_ENEMY\nShots created inside a player script are set to OWNER_PLAYER by default, OWNER_ENEMY otherwise." },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_GetIntersectionEnable(obj)", "type": "int-(shot-object-id) bool", "doc": "Returns whether ObjShot_SetIntersectionEnable was set on the shot object." },
+        { "lang": "ph3sx", "sig": "Shot::ObjShot_GetDelay(obj)", "type": "int-(shot-object-id) int", "doc": "" },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetIntersectionScaleX(obj, scaleX)", "type": "int-(shot-object-id) real void", "doc": "Sets the shot object's X hitbox scale.\nFor normal shots, the true scale is the half-point between the X and Y scales." },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetIntersectionScaleY(obj, scaleY)", "type": "int-(shot-object-id) real void", "doc": "Sets the shot object's Y hitbox scale.\nFor normal shots, the true scale is the half-point between the X and Y scales." },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetIntersectionScaleXY(obj, scaleX, scaleY)", "type": "int-(shot-object-id) real real void", "doc": "Sets the shot object's X and Y hitbox scales.\nFor normal shots, the true scale is the half-point between the X and Y scales.\nNote: Sorry folks, no ellipse hitboxes for you." },
@@ -1523,6 +1524,9 @@
 
         // since update branch
 
+        { "lang": "ph3sx-zlabel", "sig": "System::waitcall(frame, funcptr, args..)", "type": "int int-(pointer) any.. void", "doc": "Invokes the engine function, fcall, or tcall associated with the provided function pointer with the provided arguments after the specified number of frames." },
+        { "lang": "ph3sx-zlabel", "sig": "System::stop(taskenv)", "type": "int-(pointer) void", "doc": "Stops the given task." },
+
         { "lang": "ph3sx-zlabel", "sig": "Text::ObjText_SetAtlas(obj, name)", "type": "int-(text-object-id) string void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Text::LoadGlyphs()", "type": "void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Text::LoadGlyphs(path)", "type": "string void", "doc": "" },
@@ -1537,6 +1541,10 @@
         { "lang": "ph3sx-zlabel", "sig": "Shader::ObjShader_SetVectorPtr(obj, pointer, x, y, z, w)", "type": "int-(shader/render-object-id) int float float float float void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shader::ObjShader_SetMatrixPtr(obj, pointer, matrix)", "type": "int-(shader/render-object-id) int float[16] void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shader::ObjShader_SetMatrixArrayPtr(obj, pointer, matrices)", "type": "int-(shader/render-object-id) int float[][16]", "doc": "" },
+
+        { "lang": "ph3sx-zlabel", "sig": "ParticleList::ObjParticleList_Draw(obj, x, y, z, scaleX, scaleY, scaleZ, angleX, angleY, angleZ, r, g, b, a, extra1, extra2, extra3)", "type": "int-(particle-list-object-id) real real real real real real real real real int int int int real real real void", "doc": "Sets the instance data and adds the instance." },
+        { "lang": "ph3sx-zlabel", "sig": "ParticleList::ObjParticleList_Draw(obj, x, y, z, scaleX, scaleY, scaleZ, angleX, angleY, angleZ, hex, a, extra1, extra2, extra3)", "type": "int-(particle-list-object-id) real real real real real real real real real int int real real real void", "doc": "Hex color overload." },
+        { "lang": "ph3sx-zlabel", "sig": "ParticleList::ObjParticleList_Draw(obj, x, y, z, scale, angleX, angleY, angleZ, hex, a, extra1, extra2, extra3)", "type": "int-(particle-list-object-id) real real real real real real real int int real real real void", "doc": "Scale and hex color overload." },
 
         { "lang": "ph3sx-zlabel", "sig": "Move::ObjMove_AnchorToSpringNode(obj, objSpring, index, aim)", "type": "int-(shot-object-id) int-(spring-object-id) int bool void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Move::ObjMove_RemoveSpringAnchor(obj, objSpring)", "type": "int-(shot-object-id) int-(spring-object-id) void", "doc": "" },
@@ -1556,6 +1564,7 @@
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjShot_FadeDelete(obj)", "type": "int-(shot-object-id) bool", "doc": "Fades out the shot object and deletes it.\nReturns true if shot was not already fading." },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjShot_IsDeleting(obj)", "type": "int-(shot-object-id) bool", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjShot_SetAnimation(obj, animMode, duration, f1, f2, f3, f4)", "type": "int-(shot-object-id) const-int int float float float float void", "doc": "Available animations are:\nSHOTANIM_NONE\nSHOTANIM_JIGGLE\nSHOTANIM_SQUISH\nSHOTANIM_FLUTTER\nSHOTANIM_DANCE" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjShot_GetPatternWait(obj)", "type": "int-(shot-object-id) int", "doc": "" },
 
         { "lang": "ph3sx-zlabel", "sig": "Object::Obj_Clone(obj, deepCopy)", "type": "int-(object-id) bool int-(object-id)", "doc": "" },
 
@@ -1569,8 +1578,10 @@
         { "lang": "ph3sx-zlabel", "sig": "Math::GetSlice_AmorphousPolygram(sampleCount, corners, inning, smoothing)", "type": "int int real real float[]", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Math::GetSlice_EquidistantAmorphousPolygram(precision, sampleCount, corners, inning, smoothing)", "type": "int int int real real float[]", "doc": "" },
 
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_Fire(obj, wait, iterations)", "type": "int-(pattern-shot-object-id) int int void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_Fire(obj, wait, iterations, funcptrFire, funcptrTick)", "type": "int-(pattern-shot-object-id) int int int-(pointer-fcall[0:3]) int-(pointer-fcall[0:2]) void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_ClearWaiting(obj)", "type": "int-(pattern-shot-object-id) void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetCallback(obj, funcptrFire, funcptrTick)", "type": "int-(pattern-shot-object-id) int-(pointer-fcall[0:3]) int-(pointer-fcall[0:2]) void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetAutoDelete(obj, delete)", "type": "int-(pattern-shot-object-id) bool void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetShotParent(obj, moveParent)", "type": "int-(pattern-shot-object-id) int-(move-parent-object-id) void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_GetParentObject(obj)", "type": "int-(pattern-shot-object-id) int-(move-parent-object-id)", "doc": "" },
@@ -1578,9 +1589,11 @@
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetWait(obj, wayWait, stackWait)", "type": "int-(pattern-shot-object-id) int int void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetSpinParameter(obj, wvel, fixedAngle)", "type": "int-(pattern-shot-object-id) real bool void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetShootRadius(obj, radius, offsetRadius, interpolationType)", "type": "int-(pattern-shot-object-id) real real const-int void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetSafeRadius(obj, radius)", "type": "int-(pattern-shot-object-id) real void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetSpeed(obj, baseSpeed, speedArg, offsetSpeed, interpolationType)", "type": "int-(pattern-shot-object-id) real real real const-int void", "doc": "" },
-        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetAngle(obj, baseAngle, angleArg, offsetAngle)", "type": "int-(pattern-shot-object-id) real real real void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetAngle(obj, baseAngle, angleArg, offsetAngle, rangeAngle)", "type": "int-(pattern-shot-object-id) real real real real void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetScale(obj, wayScale, stackScale, interpolationType)", "type": "int-(pattern-shot-object-id) real real const-int void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetPropagate(obj, propagateSpeed, propagateWait)", "type": "int-(pattern-shot-object-id) bool bool void", "doc": "" },
 
         { "lang": "ph3sx-zlabel", "sig": "Mesh::ObjMesh_Load(obj, path, vertexCopy)", "type": "int-(mesh-object-id) string bool void", "doc": "Overload for toggling whether or not to create additional D3DFMT_A16B16G16R16 copies of mesh textures to allow for use of tex2Dlod on mesh base textures in sampler0 in vertex shaders." },
         { "lang": "ph3sx-zlabel", "sig": "Mesh::LoadMesh(path, vertexCopy)", "type": "string bool bool", "doc": "Overload for toggling whether or not to create additional D3DFMT_A16B16G16R16 copies of mesh textures to allow for use of tex2Dlod on mesh base textures in sampler0 in vertex shaders." },
