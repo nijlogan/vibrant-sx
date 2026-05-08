@@ -1,0 +1,5 @@
+{
+  "enabled": true,
+  "command": ["python", "${packages}/dnh/server.pylsp"],
+  "selector": "source.dnh"
+}

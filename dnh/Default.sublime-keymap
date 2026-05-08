@@ -1,0 +1,9 @@
+[
+    {
+        "keys": ["alt+d"],
+        "command": "lsp_show_diagnostics_panel",
+        "context": [
+            { "key": "selector", "operator": "equal", "operand": "source.dnh" }
+        ]
+    }
+]

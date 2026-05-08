@@ -1,0 +1,667 @@
+import sys
+import os
+import re
+import json
+import threading
+from typing import Tuple
+from collections import Counter
+
+_validated_project = False # False to scan whole project at start
+
+_timers = {}
+
+
+def load_jsonc(path: str):
+    with open(path, "r", encoding="utf-8") as f:
+        content = f.read()
+    content = re.sub(r"//.*", "", content)
+    return json.loads(content)
+
+
+def position_to_offset(source: str, line: int, character: int) -> int:
+    lines = source.split("\n")
+    return sum(len(lines[i]) + 1 for i in range(line)) + character
+
+
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.dirname(__file__))
+
+    import statements as st
+
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "deps"))
+
+    from pygls.lsp.server import LanguageServer
+    from pygls.uris import to_fs_path, from_fs_path
+    from lsprotocol import types
+
+    server = LanguageServer("my-server", "v0.1")
+
+    engine_functions = load_jsonc(os.path.join(os.path.dirname(__file__), "ph3sx-completions.sublime-settings"))
+    engine_function_sigs = [entry["sig"].split("::")[1].split("(")[0] for entry in engine_functions["dict"]]
+
+    def _validate(ls: LanguageServer, uri: str, version: int | None):
+
+        if not to_fs_path(uri).lower().endswith(".dnh"):
+            return
+
+        doc = ls.workspace.get_text_document(uri)
+        
+        diagnostics = []
+
+        def diagnose(message: str, severity: types.DiagnosticSeverity, line: int, position: Tuple[int, int], code: str = None, data: str = None, related_information = None):
+            diagnostics.append(
+                types.Diagnostic(
+                    message=message,
+                    severity=severity,
+                    range=types.Range(
+                        start=types.Position(line=line, character=position[0]),
+                        end=types.Position(line=line, character=position[1])
+                    ),
+                    code=code,
+                    data=data,
+                    related_information=related_information
+                )
+            )
+
+        content = doc.source
+        filtered_content = st.remove_strings_preserve_length(st.remove_comments_preserve_length(content))
+
+        if filtered_content.startswith("#UserShotData") or filtered_content.startswith("#UserItemData"):
+            return
+
+        scopes = st.compute_scope_ranges(filtered_content)
+
+        alnum_content = st.IDENTIFIER_MASK_REGEX.sub(lambda m: " " * len(m.group()), filtered_content)
+
+        definitions_everywhere = None
+        identifiers_everywhere = None
+
+        """
+        Errors:
+        - reading variables before initialization
+        - variables being treated like functions (but not the complement, function names can be "variables" such as for function pointers)
+        - incompatible variable type assignment
+        - incompatible type operations (adding string and int for example)
+        - comparing values of incompatible types
+        - wrong number of function arguments
+        - incompatible function argument types
+        - break/continue outside of a loop
+        - return outside of a function
+        - missing non-empty return in a function with non-void return type
+        - incompatible function return types
+        - array accessing a non-array type
+        - accessing outer scope non global identifiers within an fcall or tcall
+        - missing a semicolon
+        - other malformed statements
+
+        Warnings:
+        - uninitialized variables
+        - (skip?) potential division by 0
+        - (skip?) potential int64 overflow or underflow
+        - unreachable code after return/break/continue
+        - potential out of bounds access on const arrays
+        - @MainLoop missing yield
+        - @MainLoop having more than 1 yield (or a wait higher than 1)
+        - @MainLoop having more code after yield
+        - yield / wait present in @Loading, @Initialize, @Event, @Finalize
+        - infinite loops missing one of yield, wait, break, or return
+
+        Information:
+        - (skip?) unused identifiers
+        - (skip?) dead variable assignments (variable assigned but then immediately reassigned before being read)
+        - (skip?) deeply nested blocks
+        - (skip?) very long functions
+        - implicit type coercions
+        - #include headers not in the global scope
+        """
+
+        file_path = to_fs_path(uri)
+
+        user_function_entries, user_variable_entries, user_at_entries = st.extract_user_definitions(file_path, content, full_search=True)
+
+        all_user_entries = user_function_entries + user_variable_entries
+        all_user_identifiers = [user_entry["trigger"] for user_entry in all_user_entries]
+
+        # -------------------- CHECK ERROR: user definitions that are already existing engine identifiers --------------------
+        # -------------------- CHECK ERROR: duplicate user definitions in the same scope --------------------
+        # -------------------- CHECK INFORMATION: variable shadowing --------------------
+        # -------------------- CHECK ERROR: function "shadowing" (illegal) --------------------
+        # -------------------- CHECK INFORMATION: improper naming conventions --------------------
+
+        for user_variable in user_variable_entries:
+
+            if user_variable["source_file"] != file_path:
+                continue
+
+            var_name = user_variable["trigger"]
+            line_number = user_variable["line_number"] - 1
+            line_position = user_variable["line_position"]
+
+            scope_stack = user_variable["scope_stack"]
+            minimal_scope = user_variable["minimal_scope"]
+            ifdef_branch = user_variable["ifdef"]
+
+            shadowed_variables = [
+                other_variable for other_variable in user_variable_entries
+                if (other_variable["trigger"] == var_name
+                    and (other_variable["minimal_scope"] is None or other_variable["minimal_scope"] in scope_stack)
+                    and st.ifdef_branches_compatible(other_variable["ifdef"], ifdef_branch)
+                    and other_variable != user_variable
+                )
+            ]
+
+            if var_name in st.ENGINE_VARIABLE_SIGS:
+                diagnose(
+                    "Variable name clashes with existing engine constant '{}'".format(var_name),
+                    types.DiagnosticSeverity.Error, line_number, line_position,
+                    "name.clash.var.var.engine"
+                )
+
+            elif var_name in st.ENGINE_SIGS and var_name not in st.VIBRANT_SX_SIGS:
+                diagnose(
+                    "Variable name clashes with existing engine keyword '{}'".format(var_name),
+                    types.DiagnosticSeverity.Error, line_number, line_position,
+                    "name.clash.var.keyword.engine"
+                )
+
+            elif var_name in engine_function_sigs:
+                diagnose(
+                    "Variable name clashes with existing engine function '{}'".format(var_name),
+                    types.DiagnosticSeverity.Error, line_number, line_position,
+                    "name.clash.var.fun.engine"
+                )
+
+            elif sum(1 for other_variable in user_variable_entries
+                if (other_variable["trigger"] == var_name
+                    and other_variable["minimal_scope"] == minimal_scope
+                    and st.ifdef_branches_compatible(other_variable["ifdef"], ifdef_branch))
+                ) > 1:
+                diagnose(
+                    "Multiple declarations of '{}' in the same scope".format(var_name),
+                    types.DiagnosticSeverity.Error, line_number, line_position,
+                    "name.clash.var.duplicate"
+                )
+
+            elif len(shadowed_variables) > 0:
+                # shadow_msg = ""
+                # for shadowed_variable in shadowed_variables:
+                #     shadow_src = os.path.basename(shadowed_variable["source_file"])
+                #     shadow_msg += "\n@ {} {}:{}".format(shadow_src, shadowed_variable["line_number"], shadowed_variable["line_position"][0])
+
+                shadow_info = []
+                for shadowed_variable in shadowed_variables:
+                    shadow_info.append(
+                        types.DiagnosticRelatedInformation(
+                            location=types.Location(
+                                uri=from_fs_path(shadowed_variable["source_file"]),
+                                range=types.Range(
+                                    start=types.Position(line=shadowed_variable["line_number"] - 1, character=shadowed_variable["line_position"][0]),
+                                    end=types.Position(line=shadowed_variable["line_number"] - 1, character=shadowed_variable["line_position"][1])
+                                )
+                            ),
+                            message="Shadowed variable '{}'".format(var_name)
+                        )
+                    )
+
+                diagnose(
+                    "Variable declaration '{}' shadows variable of the same name in outer scope".format(var_name),
+                    types.DiagnosticSeverity.Information, line_number, line_position,
+                    "scope.var.shadow",
+                    related_information=shadow_info
+                )
+
+            elif "const" not in user_variable["type"] and var_name == var_name.upper():
+                diagnose(
+                    "Variable name '{}' is screaming snake case, which should be reserved for constants".format(var_name),
+                    types.DiagnosticSeverity.Information, line_number, line_position,
+                    "type.convention.var.constant",
+                    user_variable
+                )
+
+            elif ("const" in user_variable["type"]
+                and (var_name != var_name.upper()
+                    or (var_name.startswith("_") or var_name.endswith("_")) and any(char.isalnum() for char in var_name))):
+                diagnose(
+                    "Constant name '{}' should be screaming snake case without any leading or trailing underscores".format(var_name),
+                    types.DiagnosticSeverity.Information, line_number, line_position,
+                    "name.convention.var.constant",
+                    (var_name, var_name.strip("_").upper())
+                )
+
+            elif ("is_parameter" not in user_variable and "const" not in user_variable["type"]
+                and minimal_scope is not None and (var_name.startswith("_") or var_name.endswith("_"))):
+                diagnose(
+                    "Local variable name '{}' should not have leading or trailing underscores".format(var_name),
+                    types.DiagnosticSeverity.Information, line_number, line_position,
+                    "name.convention.var.local",
+                    (var_name, var_name.strip("_"))
+                )
+
+            elif ("const" not in user_variable["type"]
+                and minimal_scope is None and (not var_name.startswith("_") or var_name.startswith("__"))):
+                diagnose(
+                    "Global variable name '{}' should have one leading underscore".format(var_name),
+                    types.DiagnosticSeverity.Information, line_number, line_position,
+                    "name.convention.var.global",
+                    (var_name, "_" + var_name.strip("_"))
+                )
+
+            elif "is_parameter" in user_variable and (not var_name.endswith("_") or var_name.endswith("__")):
+                diagnose(
+                    "Parameter name '{}' should have one trailing underscore".format(var_name),
+                    types.DiagnosticSeverity.Information, line_number, line_position,
+                    "name.convention.var.parameter",
+                    (var_name, var_name.strip("_") + "_")
+                )
+
+        for user_function in user_function_entries:
+
+            if user_function["source_file"] != file_path:
+                continue
+
+            fun_name = user_function["trigger"]
+            line_number = user_function["line_number"] - 1
+            line_position = user_function["line_position"]
+
+            scope_stack = user_function["scope_stack"]
+            minimal_scope = user_function["minimal_scope"]
+            ifdef_branch = user_function["ifdef"]
+
+            param_count = len(user_function["params"])
+
+            if fun_name in st.ENGINE_VARIABLE_SIGS:
+                diagnose(
+                    "Block name clashes with existing engine constant '{}'".format(fun_name),
+                    types.DiagnosticSeverity.Error, line_number, line_position,
+                    "name.clash.blk.var.engine"
+                )
+
+            elif fun_name in st.ENGINE_SIGS and fun_name not in st.VIBRANT_SX_SIGS:
+                diagnose(
+                    "Block name clashes with existing engine keyword '{}'".format(fun_name),
+                    types.DiagnosticSeverity.Error, line_number, line_position,
+                    "name.clash.blk.keyword.engine"
+                )
+
+            elif fun_name in engine_function_sigs:
+                diagnose(
+                    "Block name clashes with existing engine function '{}'".format(fun_name),
+                    types.DiagnosticSeverity.Error, line_number, line_position,
+                    "name.clash.blk.fun.engine"
+                )
+
+            elif sum(1 for other_function in user_function_entries
+                if (other_function["trigger"] == fun_name
+                    and len(other_function["params"]) == param_count
+                    and other_function["minimal_scope"] == minimal_scope
+                    and st.ifdef_branches_compatible(other_function["ifdef"], ifdef_branch))
+                ) > 1:
+                diagnose(
+                    "Multiple blocks named '{}' with identical signatures in the same scope".format(fun_name),
+                    types.DiagnosticSeverity.Error, line_number, line_position,
+                    "name.clash.blk.duplicate"
+                )
+
+            elif sum(1 for other_function in user_function_entries
+                if (other_function["trigger"] == fun_name
+                    and len(other_function["params"]) == param_count
+                    and (other_function["minimal_scope"] is None or other_function["minimal_scope"] in scope_stack)
+                    and st.ifdef_branches_compatible(other_function["ifdef"], ifdef_branch))
+                ) > 1:
+                diagnose(
+                    "Block name clashes with existing block '{}' with identical signature in outer scope".format(fun_name),
+                    types.DiagnosticSeverity.Error, line_number, line_position,
+                    "name.clash.blk.outer"
+                )
+
+            elif user_function["kind"] in ("func", "function", "sub", "fcall") and fun_name.startswith("_"):
+                diagnose(
+                    "Function name '{}' should not have any leading underscore".format(fun_name),
+                    types.DiagnosticSeverity.Information, line_number, line_position,
+                    "name.convention.blk.function",
+                    (fun_name, fun_name.strip("_"))
+                )
+
+            elif (user_function["kind"] in ("task", "tcall")
+                and (not fun_name.startswith("_") or fun_name.startswith("__"))):
+                diagnose(
+                    "Task name '{}' should have one leading underscore".format(fun_name),
+                    types.DiagnosticSeverity.Information, line_number, line_position,
+                    "name.convention.blk.task",
+                    (fun_name, "_" + fun_name.strip("_"))
+                )
+
+            elif fun_name.endswith("_"):
+                diagnose(
+                    "Block name '{}' should not have any trailing underscore".format(fun_name),
+                    types.DiagnosticSeverity.Information, line_number, line_position,
+                    "name.convention.blk.general",
+                    (fun_name, "_" + fun_name.strip("_") if user_function["kind"] in ("task", "tcall") else fun_name.strip("_"))
+                )
+
+        # -------------------- CHECK ERROR: unrecognized identifiers --------------------
+        # -------------------- CHECK ERROR: unrecognized identifiers locally (potential missing #include / friend / or external dependency) --------------------
+        # -------------------- CHECK WARNING: deferred variable declaration --------------------
+
+        for match in st.IDENTIFIER_REGEX.finditer(alnum_content):
+
+            found = match.group()
+
+            if found in st.ENGINE_SIGS:
+                continue
+
+            if found in engine_function_sigs:
+                continue
+
+            match_scope_stack = st.find_scope_stack(scopes, match.start())
+            in_function = any(is_function for _, _, is_function in match_scope_stack)
+
+            line_number = content.count("\n", 0, match.start())
+
+            line_begin_pos = content.rfind("\n", 0, match.start()) + 1
+            name_start = match.start() - line_begin_pos
+            name_end = name_start + len(found)
+
+            matching_user_entries = [user_entry for user_entry in all_user_entries if user_entry["trigger"] == found]
+
+            if len(matching_user_entries) > 0:
+
+                ignore = False
+
+                for user_entry in matching_user_entries:
+                    if user_entry["source_file"] != file_path and user_entry["minimal_scope"] is None:
+                        # found declaration in global scope in an included file
+                        ignore = True
+                        break
+
+                    entry_scope = user_entry["minimal_scope"]
+
+                    if (user_entry["source_file"] == file_path
+                        and (entry_scope is None or entry_scope[0] <= match.start() <= entry_scope[1])
+                        and ("is_function" in user_entry or (line_number + 1) >= user_entry["line_number"])):
+                        # found declaration in same file in local scope earlier
+                        ignore = True
+                        break
+
+                    if in_function and entry_scope is None:
+                        diagnose(
+                            "Variable declaration '{}' found in scope, but after this block's definition. This will compile but should be avoided.\n".format(found)
+                                + "It is strongly recommended to declare all outer scope variables a block depends on before the block.\n"
+                                + "(for this reason it is purposefully omitted from autocomplete despite being valid code)",
+                            types.DiagnosticSeverity.Warning, line_number, (name_start, name_end),
+                            "name.declaration.deferred"
+                        )
+                        # found deferred declaration
+                        ignore = True
+                        break
+
+                if ignore:
+                    continue
+
+            if "//// external dependency" in content[line_begin_pos:content.find("\n", match.start())]:
+                continue
+
+            if False: # make this an option later
+                if definitions_everywhere is None:
+                    user_function_entries_everywhere, user_variable_entries_everywhere, _ = st.extract_user_definitions_everywhere(file_path)
+                    definitions_everywhere = user_function_entries_everywhere + user_variable_entries_everywhere
+                    identifiers_everywhere = [user_definition["trigger"] for user_definition in definitions_everywhere]
+
+                if found in identifiers_everywhere:
+                    diagnose(
+                        "Unrecognized identifier '{}'\n".format(found)
+                            + "An identifier with the same name was found in other project files.\n"
+                            + "Are you missing an #include, //// friend, or //// external dependency?",
+                        types.DiagnosticSeverity.Error, line_number, (name_start, name_end),
+                        "name.unrecognized.here"
+                    )
+                    continue
+
+            diagnose(
+                "Unrecognized identifier '{}'".format(found),
+                types.DiagnosticSeverity.Error, line_number, (name_start, name_end),
+                "name.unrecognized"
+            )
+
+
+        # -------------------- CHECK ERROR: non global definitions of @ blocks --------------------
+        # -------------------- CHECK ERROR: duplicate definitions of @ blocks --------------------
+
+        at_counts = Counter(m["name"] for m in user_at_entries)
+
+        for at_entry in user_at_entries:
+            at_name = at_entry["name"]
+            at_scope_stack = at_entry["scope_stack"]
+
+            line_number = at_entry["line_number"]
+            line_position = at_entry["line_position"]
+
+            if len(at_scope_stack) > 0:
+                diagnose(
+                    "'{}' block found out of global scope".format(at_name),
+                    types.DiagnosticSeverity.Error, line_number, line_position,
+                    "scope.blk.at"
+                )
+
+            elif at_name in at_counts and at_counts[at_name] > 1:
+                diagnose(
+                    "Multiple '{}' blocks found".format(at_name),
+                    types.DiagnosticSeverity.Error, line_number, line_position,
+                    "name.clash.blk.at"
+                )
+
+
+        # Publish
+
+        ls.text_document_publish_diagnostics(
+            types.PublishDiagnosticsParams(
+                uri=uri,
+                version=version,
+                diagnostics=diagnostics,
+            )
+        )
+
+
+    @server.feature(types.TEXT_DOCUMENT_DID_OPEN)
+    def did_open(ls: LanguageServer, params: types.DidOpenTextDocumentParams):
+        global _validated_project
+
+        if not _validated_project:
+
+            dnh_files = st.get_dnh_files(to_fs_path(params.text_document.uri))
+
+            for file_path in dnh_files:
+                _validate(ls, from_fs_path(file_path), None)
+
+            _validated_project = True
+
+        else:
+            _validate(ls, params.text_document.uri, params.text_document.version)
+
+
+    # @server.feature(types.TEXT_DOCUMENT_DID_CHANGE)
+    # def did_change(ls: LanguageServer, params: types.DidChangeTextDocumentParams):
+    #     _validate(ls, params.text_document.uri, params.text_document.version)
+
+    @server.feature(types.TEXT_DOCUMENT_DID_CHANGE)
+    def did_change(ls: LanguageServer, params: types.DidChangeTextDocumentParams):
+        global _timers
+
+        uri = params.text_document.uri
+        version = params.text_document.version
+
+        if uri in _timers:
+            _timers[uri].cancel()
+
+        def debounced():
+            _validate(ls, uri, version)
+            _timers.pop(uri, None)
+
+        _timers[uri] = threading.Timer(st.DEBOUNCE_TIME, debounced)
+        _timers[uri].start()
+
+
+    @server.feature(types.TEXT_DOCUMENT_DID_SAVE)
+    def did_save(ls: LanguageServer, params: types.DidSaveTextDocumentParams):
+        st.clear_cache()
+        # for uri, doc in ls.workspace.text_documents.items():
+        #     _validate(ls, uri, doc.version)
+
+    @server.feature(
+        types.TEXT_DOCUMENT_CODE_ACTION,
+        types.CodeActionOptions(resolve_provider=True)
+    )
+    def code_action(ls: LanguageServer, params: types.CodeActionParams):
+        actions = []
+        
+        for diagnostic in params.context.diagnostics:
+            
+            if diagnostic.code.startswith("name.convention"):
+                original_name = diagnostic.data[0]
+                fixed_name = diagnostic.data[1]
+
+                # single instance action
+
+                actions.append(
+                    types.CodeAction(
+                        title="Rename declaration to '{}'".format(fixed_name),
+                        kind=types.CodeActionKind.QuickFix,
+                        diagnostics=[diagnostic],
+                        edit=types.WorkspaceEdit(
+                            changes={
+                                params.text_document.uri: [
+                                    types.TextEdit(
+                                        range=diagnostic.range,
+                                        new_text=fixed_name
+                                    )
+                                ]
+                            }
+                        )
+                    )
+                )
+
+                # all occurrences in current file action
+
+                actions.append(
+                    types.CodeAction(
+                        title="Rename declaration and references in this file to '{}'".format(fixed_name),
+                        kind=types.CodeActionKind.QuickFix,
+                        diagnostics=[diagnostic],
+                        data={
+                            "name.convention:rename.current": True,
+                            "uri": params.text_document.uri,
+                            "original_name": original_name,
+                            "fixed_name": fixed_name
+                        }
+                        # edit computation is deferred to code_action_resolve
+                    )
+                )
+
+                # all occurrences in entire project action
+
+                actions.append(
+                    types.CodeAction(
+                        title="Rename declaration and references across entire project to '{}'".format(fixed_name),
+                        kind=types.CodeActionKind.QuickFix,
+                        diagnostics=[diagnostic],
+                        data={
+                            "name.convention:rename.everywhere": True,
+                            "uri": params.text_document.uri,
+                            "original_name": original_name,
+                            "fixed_name": fixed_name
+                        }
+                        # edit computation is deferred to code_action_resolve
+                    )
+                )
+
+            elif diagnostic.code.startswith("type.convention.var.constant"):
+                user_variable = diagnostic.data
+                var_name = user_variable["trigger"]
+
+                actions.append(
+                    types.CodeAction(
+                        title="Make variable '{}' constant".format(var_name),
+                        kind=types.CodeActionKind.QuickFix,
+                        diagnostics=[diagnostic],
+                        data={
+                            "type.convention.var.constant": True,
+                            "uri": params.text_document.uri,
+                            "user_variable": user_variable
+                        }
+                        # edit computation is deferred to code_action_resolve
+                    )
+                )
+        
+        return actions
+
+
+    @server.feature(types.CODE_ACTION_RESOLVE)
+    def code_action_resolve(ls: LanguageServer, params: types.CodeAction):
+
+        if not params.data:
+            return params
+
+        if "name.convention:rename.current" in params.data:
+            original_name = params.data["original_name"]
+            fixed_name = params.data["fixed_name"]
+            uri = params.data["uri"]
+
+            doc = ls.workspace.get_text_document(uri)
+
+            edits = []
+            for match in re.finditer(r"\b" + re.escape(original_name) + r"\b", doc.source):
+                line = doc.source.count("\n", 0, match.start())
+                line_start = doc.source.rfind("\n", 0, match.start()) + 1
+                col = match.start() - line_start
+                edits.append(
+                    types.TextEdit(
+                        range=types.Range(
+                            start=types.Position(line=line, character=col),
+                            end=types.Position(line=line, character=col + len(original_name))
+                        ),
+                        new_text=fixed_name
+                    )
+                )
+            
+            params.edit = types.WorkspaceEdit(
+                changes={
+                    uri: edits
+                }
+            )
+
+        elif "name.convention:rename.everywhere" in params.data:
+            pass
+
+        elif "type.convention.var.constant" in params.data:
+            user_variable = params.data["user_variable"]
+            uri = params.data["uri"]
+            diagnostic = params.diagnostics[0]
+
+            doc = ls.workspace.get_text_document(uri)
+
+            var_source_pos = position_to_offset(doc.source, diagnostic.range.start.line, diagnostic.range.start.character)
+            var_type = user_variable["type"]
+
+            type_pos = doc.source.rfind(var_type, 0, var_source_pos)
+            line_begin_pos = doc.source.rfind("\n", 0, type_pos) + 1
+            type_start = type_pos - line_begin_pos
+            type_end = type_start + len(var_type)
+
+            params.edit = types.WorkspaceEdit(
+                changes={
+                    uri: [
+                        types.TextEdit(
+                            range=types.Range(
+                                start=types.Position(line=diagnostic.range.start.line, character=type_start),
+                                end=types.Position(line=diagnostic.range.end.line, character=type_end)
+                            ),
+                            new_text="const " + var_type
+                        )
+                    ]
+                }
+            )
+        
+        return params
+
+
+    server.start_io()

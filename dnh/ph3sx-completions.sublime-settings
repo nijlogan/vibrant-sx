@@ -3,6 +3,10 @@
 
     "dict":
     [
+        // Basic Operation functions
+
+        { "lang": "ph3", "sig": "Array::length(array)", "type": "any[] int", "doc": "Returns the length of the given array." },
+
         // Math functions
 
         { "lang": "ph3", "sig": "Math::min(a, b)", "type": "real real real", "doc": "Returns the minimum of the two values." },
@@ -511,9 +515,9 @@
         { "lang": "ph3", "sig": "Move::ObjMove_SetDestAtFrame(obj, x, y, frames)", "type": "int-(move-object-id) real real int void", "doc": "Moves the object towards the given coordinates in the number of frames specified." },
         { "lang": "ph3", "sig": "Move::ObjMove_SetDestAtWeight(obj, x, y, weight, max_s)", "type": "int-(move-object-id) real real real real void", "doc": "Moves the object towards the given coordinates. It will slow down near the end of the movement based on the weight specified." },
         { "lang": "ph3", "sig": "Move::ObjMove_AddPatternA1(obj, frame, speed, angle)", "type": "int-(move-object-id) int real real void", "doc": "After the specified number of frames, changes the speed and angle of the object. NO_CHANGE can be used to preserve the original speed or angle." },
-        { "lang": "ph3", "sig": "Move::ObjMove_AddPatternA2(obj, frame, speed, angle, accel, wVel, maxSpeed)", "type": "int-(move-object-id) int real real real real real void", "doc": "After the specified number of frames, changes the movement properties of the object. NO_CHANGE can be used to preserve the original properties." },
-        { "lang": "ph3", "sig": "Move::ObjMove_AddPatternA3(obj, frame, speed, angle, accel, wVel, maxSpeed, graphic)", "type": "int-(move-object-id) int real real real real real const-int void", "doc": "After the specified number of frames, changes the movement properties of the object. NO_CHANGE can be used to preserve the original properties." },
-        { "lang": "ph3", "sig": "Move::ObjMove_AddPatternA4(obj, frame, speed, angle, accel, wVel, maxSpeed, objDest, graphic)", "type": "int-(move-object-id) int real real real real real int-(move-object-id) const-int void", "doc": "After the specified number of frames, changes the movement properties of the object. NO_CHANGE can be used to preserve the original properties.\nThe angle parameter is relative to the angle from the object to the target.\nFor instance, if the player object id is used as the target, an angle of 0 will cause the object to aim for the player." },
+        { "lang": "ph3*", "sig": "Move::ObjMove_AddPatternA2(obj, frame, speed, angle, accel, wVel, maxSpeed)", "type": "int-(move-object-id) int real real real real real void", "doc": "After the specified number of frames, changes the movement properties of the object. NO_CHANGE can be used to preserve the original properties." },
+        { "lang": "ph3*", "sig": "Move::ObjMove_AddPatternA3(obj, frame, speed, angle, accel, wVel, maxSpeed, graphic)", "type": "int-(move-object-id) int real real real real real const-int void", "doc": "After the specified number of frames, changes the movement properties of the object. NO_CHANGE can be used to preserve the original properties." },
+        { "lang": "ph3*", "sig": "Move::ObjMove_AddPatternA4(obj, frame, speed, angle, accel, wVel, maxSpeed, objDest, graphic)", "type": "int-(move-object-id) int real real real real real int-(move-object-id) const-int void", "doc": "After the specified number of frames, changes the movement properties of the object. NO_CHANGE can be used to preserve the original properties.\nThe angle parameter is relative to the angle from the object to the target.\nFor instance, if the player object id is used as the target, an angle of 0 will cause the object to aim for the player." },
         { "lang": "ph3", "sig": "Move::ObjMove_AddPatternB1(obj, frame, speedX, speedY)", "type": "int-(move-object-id) int real real void", "doc": "After the specified number of frames, changes the x and y movement speeds of the object. NO_CHANGE can be used to preserve the original speeds." },
         { "lang": "ph3", "sig": "Move::ObjMove_AddPatternB2(obj, frame, speedX, speedY, accelX, accelY, maxSpeedX, maxSpeedY)", "type": "int-(move-object-id) int real real real real real real void", "doc": "After the specified number of frames, changes the movement properties of the object. NO_CHANGE can be used to preserve the original properties." },
         { "lang": "ph3", "sig": "Move::ObjMove_AddPatternB3(obj, frame, speedX, speedY, accelX, accelY, maxSpeedX, maxSpeedY, graphic)", "type": "int-(move-object-id) int real real real real real real const-int void", "doc": "After the specified number of frames, changes the movement properties of the object. NO_CHANGE can be used to preserve the original properties." },
@@ -553,7 +557,7 @@
         { "lang": "ph3", "sig": "Shot::ObjShot_SetDelay(obj, frames)", "type": "int-(shot-object-id) int void", "doc": "Delays the shot object, firing it after the specified number of frames.\nBullets will glow to announce delay; lasers will be shown very thin." },
         { "lang": "ph3", "sig": "Shot::ObjShot_SetSpellResist(obj, enable)", "type": "int-(shot-object-id) bool void", "doc": "When set to true, the shot object will not be deleted by the player's bomb. Defaults to false." },
         { "lang": "ph3", "sig": "Shot::ObjShot_SetGraphic(obj, graphic)", "type": "int-(shot-object-id) const-int void", "doc": "Gives the shot object the specified graphic." },
-        { "lang": "ph3", "sig": "Shot::ObjShot_SetSourceBlendType(obj, blendType)", "type": "int-(shot-object-id) const-int void", "doc": "Gives the shot object's delay graphic the specified blend type. Options are:\n\tBLEND_ALPHA: Alpha blend\n\tBLEND_ADD_RGB: Additive blend\n\tBLEND_ADD_ARGB: Additive blend with alpha channel\n\tBLEND_MULTIPLY: Multiplicative blend\n\tBLEND_SUBTRACT: Subtractive blend\n\tBLEND_INV_DESTRGB: Inverting blend" },
+        { "lang": "ph3*", "sig": "Shot::ObjShot_SetSourceBlendType(obj, blendType)", "type": "int-(shot-object-id) const-int void", "doc": "Gives the shot object's delay graphic the specified blend type. Options are:\n\tBLEND_ALPHA: Alpha blend\n\tBLEND_ADD_RGB: Additive blend\n\tBLEND_ADD_ARGB: Additive blend with alpha channel\n\tBLEND_MULTIPLY: Multiplicative blend\n\tBLEND_SUBTRACT: Subtractive blend\n\tBLEND_INV_DESTRGB: Inverting blend\nRenamed to ObjShot_SetDelayBlendType in ph3sx and ph3sx-zlabel." },
         { "lang": "ph3", "sig": "Shot::ObjShot_SetDamage(obj, damage)", "type": "int-(shot-object-id) real void", "doc": "Sets the damage of the specified shot object. For player shots only." },
         { "lang": "ph3", "sig": "Shot::ObjShot_SetPenetration(obj, penetration)", "type": "int-(shot-object-id) int void", "doc": "Sets the penetration of the shot object.\nThe shot object can hit enemies as many times as the penetration value before being deleted.\nFor player shots only." },
         { "lang": "ph3", "sig": "Shot::ObjShot_SetEraseShot(obj, enable)", "type": "int-(shot-object-id) bool void", "doc": "Enables/disables the ability to erase enemy shots when the specified shot object comes into contact with it. \nEach time a shot is erased, the penetration of the shot object will go down by 1.\nFor player shots only." },
@@ -629,7 +633,7 @@
         // Package Functions
 
         { "lang": "ph3", "sig": "Package::ClosePackage()", "type": "void", "doc": "Ends the package script." },
-        { "lang": "ph3", "sig": "Package::IntializeStageScene()", "type": "void", "doc": "Performs the initial processing for the stage script.\nCalled only once before the start of a stage script." },
+        { "lang": "ph3", "sig": "Package::InitializeStageScene()", "type": "void", "doc": "Performs the initial processing for the stage script.\nCalled only once before the start of a stage script." },
         { "lang": "ph3", "sig": "Package::FinalizeStageScene()", "type": "void", "doc": "Terminates processing of the stage script.\nCalled only once at the end of a stage script.\nDefines the end point of replays.\nThrows an error if the stage script is not yet closed." },
         { "lang": "ph3", "sig": "Package::StartStageScene()", "type": "void", "doc": "Starts the stage script." },
         { "lang": "ph3", "sig": "Package::SetStageIndex(index)", "type": "int void", "doc": "Defines the index of the stage to be started next.\nThe value does not need to be sequential.\nSpecifying an already specified index results in an error." },
@@ -666,10 +670,15 @@
         { "lang": "ph3sx", "sig": "Array::contains(array, value)", "type": "any[] any bool", "doc": "Checks if the given value is present as an element of the given array." },
         { "lang": "ph3sx", "sig": "Array::replace(array, replace_from, replace_with)", "type": "any[] int any any[]", "doc": "Replaces all occurences of the given element with the other in the array." },
         { "lang": "ph3sx", "sig": "Array::remove(array, value)", "type": "any[] any any[]", "doc": "Removes all occurences of the given element in the array." },
+        { "lang": "ph3sx", "sig": "Array::slice(array, start, end)", "type": "any[] int int any[]", "doc": "" },
         { "lang": "ph3sx", "sig": "Array::erase(array, position)", "type": "any[] int any[]", "doc": "" },
+        { "lang": "ph3sx", "sig": "Array::append(array, value)", "type": "any[] any any[]", "doc": "" },
+        { "lang": "ph3sx", "sig": "Array::concatenate(array1, array2)", "type": "any[] any[] any[]", "doc": "" },
+        { "lang": "ph3sx", "sig": "Array::compare(array1, array2)", "type": "any[] any[] int", "doc": "" },
         
         // Type Casting functions
         
+        { "lang": "ph3sx", "sig": "Type::as_x(value, type)", "type": "any int any", "doc": "Casts to the given type, then returns the result.\nSupported types: VAR_INT, VAR_FLOAT, VAR_BOOL, VAR_CHAR" },
         { "lang": "ph3sx", "sig": "Type::as_int(value)", "type": "any int", "doc": "Returns the given value casted to an int value." },
         { "lang": "ph3sx", "sig": "Type::as_float(value)", "type": "any float", "doc": "Returns the given value casted to a float value." },
         { "lang": "ph3sx", "sig": "Type::as_bool(value)", "type": "any bool", "doc": "Returns the given value casted to a bool value." },
@@ -828,6 +837,7 @@
         { "lang": "ph3sx", "sig": "System::GetConfigWindowTitle()", "type": "string", "doc": "Returns the engine's default window title, or the one specified in th_dnh.def if it exists." },
         { "lang": "ph3sx", "sig": "System::SetWindowTitle(title)", "type": "string void", "doc": "Sets the window title.\nPassing in an empty string will reset the window title to the default." },
         { "lang": "ph3sx", "sig": "System::SetEnableUnfocusedProcessing(process)", "type": "bool void", "doc": "Enables or disables unfocused processing." },
+        { "lang": "ph3sx", "sig": "System::IsWindowFocused()", "type": "bool", "doc": "Returns whether the window is in focus." },
         { "lang": "ph3sx", "sig": "System::GetLastFrameUpdateSpeed()", "type": "int", "doc": "Returns the time the engine took to update scripts in the previous frame in milliseconds." },
         { "lang": "ph3sx", "sig": "System::GetLastFrameRenderSpeed()", "type": "int", "doc": "Returns the time the engine took to render the previous frame in milliseconds." },
         
@@ -1203,6 +1213,7 @@
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetDelayColor(obj, hex)", "type": "int-(shot-object-id) int void", "doc": "Sets the color of the shot object's delay cloud as an ARGB hexadecimal color value.\nSet to 0 to revert to using the shot data's delay color." },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetDelayColoringEnable(obj, enable)", "type": "int-(shot-object-id) bool void", "doc": "When set to true, enables the object color to affect the shot object's delay cloud." },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetDelayScalingEnable(obj, enable)", "type": "int-(shot-object-id) bool void", "doc": "When set to true, enables the object scale to affect the shot object's delay cloud." },
+        { "lang": "ph3sx", "sig": "Shot::ObjShot_SetDelayBlendType(obj, blendType)", "type": "int-(shot-object-id) const-int void", "doc": "Gives the shot object's delay graphic the specified blend type. Options are:\n\tBLEND_ALPHA: Alpha blend\n\tBLEND_ADD_RGB: Additive blend\n\tBLEND_ADD_ARGB: Additive blend with alpha channel\n\tBLEND_MULTIPLY: Multiplicative blend\n\tBLEND_SUBTRACT: Subtractive blend\n\tBLEND_INV_DESTRGB: Inverting blend" },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetGrazeInvalidFrame(obj, frame)", "type": "int-(shot-object-id) int void", "doc": "Sets the shot object's graze cooldown frame.\nAfter being grazed, the shot will be put on graze cooldown, wherein it cannot be grazed for the duration.\nFor lasers, the default value is 20.\nFor normal shots, the default value is 2147483647." },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetGrazeFrame(obj, frame)", "type": "int-(shot-object-id) int void", "doc": "Sets the shot object's graze frame.\nInternally, this value is reset to the graze invalid frame every time a graze is performed.\nThis value decreases by 1 every frame, and the shot object is eligible for a graze if it is equal to or less than 0." },
         { "lang": "ph3sx", "sig": "Shot::ObjShot_IsValidGraze(obj)", "type": "int-(shot-object-id) bool", "doc": "Returns whether the shot object is currently able to be grazed." },
@@ -1213,6 +1224,8 @@
         { "lang": "ph3sx", "sig": "Shot::ObjShot_SetDelayAngularVelocity(obj, wVel)", "type": "int-(shot-object-id) real void", "doc": "Sets the Z angle spin speed of the shot's delay cloud.\nThe default delay spin speed is 0." },
 
         { "lang": "ph3sx", "sig": "Shot::ObjLaser_SetItemDistance(obj, distance)", "type": "int-(shot-object-id) real void", "doc": "" },
+        { "lang": "ph3sx", "sig": "Shot::ObjLaser_GetRenderWidth(obj)", "type": "int-(shot-object-id) int", "doc": "" },
+        { "lang": "ph3sx", "sig": "Shot::ObjLaser_GetIntersectionWidth(obj)", "type": "int-(shot-object-id) int", "doc": "" },
         
         // Straight Laser Object functions
         
@@ -1513,14 +1526,18 @@
 
         // missed
 
-        { "lang": "ph3sx-zlabel", "sig": "Type::as_x(array, type)", "type": "any int any", "doc": "Casts to the given type, then returns the result.\nSupported types: VAR_INT, VAR_FLOAT, VAR_BOOL, VAR_CHAR" },
-
         { "lang": "ph3sx-zlabel", "sig": "Math::apo(corners)", "type": "int float", "doc": "Computes apothem (incircle radius) of a regular polygon with radius 1 and the specified number of corners." },
 
         { "lang": "ph3sx-zlabel", "sig": "Array::generate(size, fill)", "type": "int any any[]", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Array::reverse(array)", "type": "any[] any[]", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Array::sort(array)", "type": "any[] any[]", "doc": "" },
-        { "lang": "ph3sx-zlabel", "sig": "Array::insert(array, position, value)", "type": "any[] int any any[]", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Array::range(end)", "type": "int any[]", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Array::range(start, end)", "type": "int int any[]", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Array::range(start, end, skip)", "type": "int int int any[]", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Array::indexof(array, value)", "type": "any[] int int", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Array::matches(array, value)", "type": "any[] int int[]", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Array::all(array)", "type": "any[] bool", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Array::any(array)", "type": "any[] bool", "doc": "" },
 
         // since update branch
 
@@ -1586,19 +1603,21 @@
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetShotParent(obj, moveParent)", "type": "int-(pattern-shot-object-id) int-(move-parent-object-id) void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_GetParentObject(obj)", "type": "int-(pattern-shot-object-id) int-(move-parent-object-id)", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetShotCount(obj, way, stack, wayCutoff, interlace)", "type": "int-(pattern-shot-object-id) int int int bool void", "doc": "" },
-        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetWait(obj, wayWait, stackWait)", "type": "int-(pattern-shot-object-id) int int void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetWait(obj, wayWait, stackWait, addWait)", "type": "int-(pattern-shot-object-id) int int bool void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetSpinParameter(obj, wvel, fixedAngle)", "type": "int-(pattern-shot-object-id) real bool void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetShootRadius(obj, radius, offsetRadius, interpolationType)", "type": "int-(pattern-shot-object-id) real real const-int void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetSafeRadius(obj, radius)", "type": "int-(pattern-shot-object-id) real void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetSpeed(obj, baseSpeed, speedArg, offsetSpeed, interpolationType)", "type": "int-(pattern-shot-object-id) real real real const-int void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetAngle(obj, baseAngle, angleArg, offsetAngle, rangeAngle)", "type": "int-(pattern-shot-object-id) real real real real void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetScale(obj, wayScale, stackScale, interpolationType)", "type": "int-(pattern-shot-object-id) real real const-int void", "doc": "" },
-        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetPropagate(obj, propagateSpeed, propagateWait)", "type": "int-(pattern-shot-object-id) bool bool void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_ModifyPattern(obj)", "type": "int-(pattern-shot-object-id) void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_ModifyPattern(obj, wayMulA, wayMulB, stackMulA, stackMulB, interpolationType)", "type": "int-(pattern-shot-object-id) real real real real const-int void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Shot::ObjPatternShot_SetParentObject(obj, parent, follow)", "type": "int-(pattern-shot-object-id) int-(move-object-id) bool void", "doc": "" },
 
         { "lang": "ph3sx-zlabel", "sig": "Mesh::ObjMesh_Load(obj, path, vertexCopy)", "type": "int-(mesh-object-id) string bool void", "doc": "Overload for toggling whether or not to create additional D3DFMT_A16B16G16R16 copies of mesh textures to allow for use of tex2Dlod on mesh base textures in sampler0 in vertex shaders." },
         { "lang": "ph3sx-zlabel", "sig": "Mesh::LoadMesh(path, vertexCopy)", "type": "string bool bool", "doc": "Overload for toggling whether or not to create additional D3DFMT_A16B16G16R16 copies of mesh textures to allow for use of tex2Dlod on mesh base textures in sampler0 in vertex shaders." },
 
-        { "lang": "ph3sx-zlabel", "sig": "Shader::LoadShader(path, fromAscii)", "type": "string bool bool", "doc": "Overload for toggling whether to compile shader from ASCII and ignore any existing .fxo file, regenerating .fxo file." },
+        { "lang": "ph3sx-zlabel", "sig": "Shader::LoadShader(path, fromAscii)", "type": "string bool bool", "doc": "Overload for toggling whether to compile shader from ASCII and ignore any existing .fxo file, regenerating .fxo file." }
 
         // ObjSpriteAnim (all this I would be unable to document)
 
