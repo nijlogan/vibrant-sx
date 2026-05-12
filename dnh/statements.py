@@ -729,19 +729,42 @@ TYPE_PATTERN = r"(?:bool|char|float|string|int|object|ptr|fn|tenv|var|let|real)"
 
 FUNC_PATTERN = r"func|function|task|sub|fcall|tcall"
 
+BLOCK_PATTERN = r"local|async|if|else|for\s+each|for|do|while|ascent|descent|loop|times|case|others"
+
+BLOCK_ARGS_KEYWORDS = [
+    "if",
+    "for",
+    "each",
+    "in",
+    "ref",
+    "while",
+    "ascent",
+    "descent",
+    "loop",
+    "times",
+    "alternative",
+    "case",
+    "bool",
+    "char",
+    "float",
+    "string",
+    "int",
+    "return"
+]
+
 FUNC_KEYWORD_REGEX = re.compile(
     r"\b({func_pattern})\b".format(func_pattern=FUNC_PATTERN),
     re.VERBOSE
 )
 
 ENGINE_AT_REGEX = re.compile(
-    r"({})" .format("|".join(re.escape(sig) for sig in ENGINE_AT_SIGS)),
+    r"({})".format("|".join(re.escape(sig) for sig in ENGINE_AT_SIGS)),
     re.VERBOSE
 )
 
 SCOPE_KEYWORD_REGEX = re.compile(
-    r"\b(local|{func_pattern}|async|if|else|for\s+each|for|while|ascent|descent|loop|times|case|others)\b"
-        .format(func_pattern=FUNC_PATTERN),
+    r"\b({func_pattern}|{block_pattern})\b"
+        .format(func_pattern=FUNC_PATTERN, block_pattern=BLOCK_PATTERN),
     re.VERBOSE
 )
 
@@ -825,6 +848,8 @@ IDENTIFIER_MASK_REGEX = re.compile(
 
 IDENTIFIER_REGEX = re.compile(r"[#@]?[A-Za-z_]\w*", re.VERBOSE | re.DOTALL)
 
+IDENTIFIER_FUNC_REGEX = re.compile(r"\b(?P<name>[A-Za-z_]\w*)\s*\(", re.VERBOSE | re.DOTALL)
+
 NAME_COLORS = {
     "task": "#6FFFB0",
     "obj-func": "#5290DF",
@@ -877,10 +902,21 @@ def remove_comments_and_trim(text):
     return text
 
 
+# def remove_strings_preserve_length(text):
+
+#     def replacer(match):
+#         return " " * len(match.group(0))
+
+#     text = re.sub(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', replacer, text)
+
+#     return text
+
+
 def remove_strings_preserve_length(text):
 
     def replacer(match):
-        return " " * len(match.group(0))
+        s = match.group(0)
+        return s[0] + " " * (len(s) - 2) + s[-1]
 
     text = re.sub(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', replacer, text)
 
@@ -951,38 +987,6 @@ def find_scope_stack(scopes, pos):
         for start, end, is_function in scopes
         if start < pos < end
     ]
-
-
-# def find_ifdef_branch(branches, pos):
-
-#     for chain_start, start, end, branch_index in branches:
-#         if start < pos < end:
-#             return (chain_start, branch_index)
-
-#     return None
-
-
-# def compute_ifdef_branches(text):
-
-#     branches = []
-#     stack = []
-    
-#     for match in re.finditer(r"^[ \t]*(#ifdef|#ifndef|#else|#endif)(?:[ \t]+(\w+))?", text, re.MULTILINE):
-#         directive = match.group(1)
-        
-#         if directive in ("#ifdef", "#ifndef"):
-#             stack.append((match.start(), match.start(), 0))
-#         elif directive == "#else":
-#             if stack:
-#                 chain_start, branch_start, branch_index = stack.pop()
-#                 branches.append((chain_start, branch_start, match.start(), branch_index))
-#                 stack.append((chain_start, match.start(), branch_index + 1))
-#         elif directive == "#endif":
-#             if stack:
-#                 chain_start, branch_start, branch_index = stack.pop()
-#                 branches.append((chain_start, branch_start, match.end(), branch_index))
-    
-#     return branches
 
 
 def compute_ifdef_branches(text):
@@ -1538,3 +1542,38 @@ def extract_user_definitions(view_file_name, view_content, view_scope_name="", l
     extract_user_definitions_recurse(view_file_name, offset=location)
 
     return functions, variables, ats
+
+
+def get_call_argument_info(content):
+    size = len(content)
+
+    if size == 0:
+        return None
+
+    if content[0] != '(':
+        return None
+
+    depth = 0
+    comma_count = 0
+    i = 0
+
+    for ch in content:
+
+        if ch == '(' or ch == '[':
+            depth += 1
+
+        elif ch == ')' or ch == ']':
+            depth -= 1
+            if depth <= 0:
+                break
+
+        elif ch == ',' and depth == 1:
+            comma_count += 1
+
+        if ch != ' ':
+            i += 1
+
+    if i == 1:
+        return 0
+
+    return comma_count + 1

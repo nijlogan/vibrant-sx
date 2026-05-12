@@ -34,7 +34,7 @@ if __name__ == "__main__":
     from pygls.uris import to_fs_path, from_fs_path
     from lsprotocol import types
 
-    server = LanguageServer("my-server", "v0.1")
+    server = LanguageServer("dnh-server", "v0.1")
 
     engine_functions = load_jsonc(os.path.join(os.path.dirname(__file__), "ph3sx-completions.sublime-settings"))
     engine_function_sigs = [entry["sig"].split("::")[1].split("(")[0] for entry in engine_functions["dict"]]
@@ -118,8 +118,10 @@ if __name__ == "__main__":
         file_path = to_fs_path(uri)
 
         user_function_entries, user_variable_entries, user_at_entries = st.extract_user_definitions(file_path, content, full_search=True)
-
         all_user_entries = user_function_entries + user_variable_entries
+
+        user_function_identifiers = [user_entry["trigger"] for user_entry in user_function_entries]
+        # user_variable_identifiers isn't needed yet
         all_user_identifiers = [user_entry["trigger"] for user_entry in all_user_entries]
 
         # -------------------- CHECK ERROR: user definitions that are already existing engine identifiers --------------------
@@ -152,21 +154,21 @@ if __name__ == "__main__":
 
             if var_name in st.ENGINE_VARIABLE_SIGS:
                 diagnose(
-                    "Variable name clashes with existing engine constant '{}'".format(var_name),
+                    "Variable name clashes with existing engine constant '{}'\n".format(var_name),
                     types.DiagnosticSeverity.Error, line_number, line_position,
                     "name.clash.var.var.engine"
                 )
 
             elif var_name in st.ENGINE_SIGS and var_name not in st.VIBRANT_SX_SIGS:
                 diagnose(
-                    "Variable name clashes with existing engine keyword '{}'".format(var_name),
+                    "Variable name clashes with existing engine keyword '{}'\n".format(var_name),
                     types.DiagnosticSeverity.Error, line_number, line_position,
                     "name.clash.var.keyword.engine"
                 )
 
             elif var_name in engine_function_sigs:
                 diagnose(
-                    "Variable name clashes with existing engine function '{}'".format(var_name),
+                    "Variable name clashes with existing engine function '{}'\n".format(var_name),
                     types.DiagnosticSeverity.Error, line_number, line_position,
                     "name.clash.var.fun.engine"
                 )
@@ -177,7 +179,7 @@ if __name__ == "__main__":
                     and st.ifdef_branches_compatible(other_variable["ifdef"], ifdef_branch))
                 ) > 1:
                 diagnose(
-                    "Multiple declarations of '{}' in the same scope".format(var_name),
+                    "Multiple declarations of '{}' in the same scope\n".format(var_name),
                     types.DiagnosticSeverity.Error, line_number, line_position,
                     "name.clash.var.duplicate"
                 )
@@ -204,7 +206,7 @@ if __name__ == "__main__":
                     )
 
                 diagnose(
-                    "Variable declaration '{}' shadows variable of the same name in outer scope".format(var_name),
+                    "Variable declaration '{}' shadows variable of the same name in outer scope\n".format(var_name),
                     types.DiagnosticSeverity.Information, line_number, line_position,
                     "scope.var.shadow",
                     related_information=shadow_info
@@ -212,7 +214,7 @@ if __name__ == "__main__":
 
             elif "const" not in user_variable["type"] and var_name == var_name.upper():
                 diagnose(
-                    "Variable name '{}' is screaming snake case, which should be reserved for constants".format(var_name),
+                    "Variable name '{}' is screaming snake case, which should be reserved for constants\n".format(var_name),
                     types.DiagnosticSeverity.Information, line_number, line_position,
                     "type.convention.var.constant",
                     user_variable
@@ -222,7 +224,7 @@ if __name__ == "__main__":
                 and (var_name != var_name.upper()
                     or (var_name.startswith("_") or var_name.endswith("_")) and any(char.isalnum() for char in var_name))):
                 diagnose(
-                    "Constant name '{}' should be screaming snake case without any leading or trailing underscores".format(var_name),
+                    "Constant name '{}' should be screaming snake case without any leading or trailing underscores\n".format(var_name),
                     types.DiagnosticSeverity.Information, line_number, line_position,
                     "name.convention.var.constant",
                     (var_name, var_name.strip("_").upper())
@@ -231,7 +233,7 @@ if __name__ == "__main__":
             elif ("is_parameter" not in user_variable and "const" not in user_variable["type"]
                 and minimal_scope is not None and (var_name.startswith("_") or var_name.endswith("_"))):
                 diagnose(
-                    "Local variable name '{}' should not have leading or trailing underscores".format(var_name),
+                    "Local variable name '{}' should not have leading or trailing underscores\n".format(var_name),
                     types.DiagnosticSeverity.Information, line_number, line_position,
                     "name.convention.var.local",
                     (var_name, var_name.strip("_"))
@@ -240,7 +242,7 @@ if __name__ == "__main__":
             elif ("const" not in user_variable["type"]
                 and minimal_scope is None and (not var_name.startswith("_") or var_name.startswith("__"))):
                 diagnose(
-                    "Global variable name '{}' should have one leading underscore".format(var_name),
+                    "Global variable name '{}' should have one leading underscore\n".format(var_name),
                     types.DiagnosticSeverity.Information, line_number, line_position,
                     "name.convention.var.global",
                     (var_name, "_" + var_name.strip("_"))
@@ -248,7 +250,7 @@ if __name__ == "__main__":
 
             elif "is_parameter" in user_variable and (not var_name.endswith("_") or var_name.endswith("__")):
                 diagnose(
-                    "Parameter name '{}' should have one trailing underscore".format(var_name),
+                    "Parameter name '{}' should have one trailing underscore\n".format(var_name),
                     types.DiagnosticSeverity.Information, line_number, line_position,
                     "name.convention.var.parameter",
                     (var_name, var_name.strip("_") + "_")
@@ -271,21 +273,21 @@ if __name__ == "__main__":
 
             if fun_name in st.ENGINE_VARIABLE_SIGS:
                 diagnose(
-                    "Block name clashes with existing engine constant '{}'".format(fun_name),
+                    "Block name clashes with existing engine constant '{}'\n".format(fun_name),
                     types.DiagnosticSeverity.Error, line_number, line_position,
                     "name.clash.blk.var.engine"
                 )
 
             elif fun_name in st.ENGINE_SIGS and fun_name not in st.VIBRANT_SX_SIGS:
                 diagnose(
-                    "Block name clashes with existing engine keyword '{}'".format(fun_name),
+                    "Block name clashes with existing engine keyword '{}'\n".format(fun_name),
                     types.DiagnosticSeverity.Error, line_number, line_position,
                     "name.clash.blk.keyword.engine"
                 )
 
             elif fun_name in engine_function_sigs:
                 diagnose(
-                    "Block name clashes with existing engine function '{}'".format(fun_name),
+                    "Block name clashes with existing engine function '{}'\n".format(fun_name),
                     types.DiagnosticSeverity.Error, line_number, line_position,
                     "name.clash.blk.fun.engine"
                 )
@@ -297,7 +299,7 @@ if __name__ == "__main__":
                     and st.ifdef_branches_compatible(other_function["ifdef"], ifdef_branch))
                 ) > 1:
                 diagnose(
-                    "Multiple blocks named '{}' with identical signatures in the same scope".format(fun_name),
+                    "Multiple blocks named '{}' with identical signatures in the same scope\n".format(fun_name),
                     types.DiagnosticSeverity.Error, line_number, line_position,
                     "name.clash.blk.duplicate"
                 )
@@ -309,14 +311,14 @@ if __name__ == "__main__":
                     and st.ifdef_branches_compatible(other_function["ifdef"], ifdef_branch))
                 ) > 1:
                 diagnose(
-                    "Block name clashes with existing block '{}' with identical signature in outer scope".format(fun_name),
+                    "Block name clashes with existing block '{}' with identical signature in outer scope\n".format(fun_name),
                     types.DiagnosticSeverity.Error, line_number, line_position,
                     "name.clash.blk.outer"
                 )
 
             elif user_function["kind"] in ("func", "function", "sub", "fcall") and fun_name.startswith("_"):
                 diagnose(
-                    "Function name '{}' should not have any leading underscore".format(fun_name),
+                    "Function name '{}' should not have any leading underscore\n".format(fun_name),
                     types.DiagnosticSeverity.Information, line_number, line_position,
                     "name.convention.blk.function",
                     (fun_name, fun_name.strip("_"))
@@ -325,7 +327,7 @@ if __name__ == "__main__":
             elif (user_function["kind"] in ("task", "tcall")
                 and (not fun_name.startswith("_") or fun_name.startswith("__"))):
                 diagnose(
-                    "Task name '{}' should have one leading underscore".format(fun_name),
+                    "Task name '{}' should have one leading underscore\n".format(fun_name),
                     types.DiagnosticSeverity.Information, line_number, line_position,
                     "name.convention.blk.task",
                     (fun_name, "_" + fun_name.strip("_"))
@@ -333,7 +335,7 @@ if __name__ == "__main__":
 
             elif fun_name.endswith("_"):
                 diagnose(
-                    "Block name '{}' should not have any trailing underscore".format(fun_name),
+                    "Block name '{}' should not have any trailing underscore\n".format(fun_name),
                     types.DiagnosticSeverity.Information, line_number, line_position,
                     "name.convention.blk.general",
                     (fun_name, "_" + fun_name.strip("_") if user_function["kind"] in ("task", "tcall") else fun_name.strip("_"))
@@ -387,7 +389,7 @@ if __name__ == "__main__":
                         diagnose(
                             "Variable declaration '{}' found in scope, but after this block's definition. This will compile but should be avoided.\n".format(found)
                                 + "It is strongly recommended to declare all outer scope variables a block depends on before the block.\n"
-                                + "(for this reason it is purposefully omitted from autocomplete despite being valid code)",
+                                + "(for this reason it is purposefully omitted from autocomplete despite being valid code)\n",
                             types.DiagnosticSeverity.Warning, line_number, (name_start, name_end),
                             "name.declaration.deferred"
                         )
@@ -411,17 +413,120 @@ if __name__ == "__main__":
                     diagnose(
                         "Unrecognized identifier '{}'\n".format(found)
                             + "An identifier with the same name was found in other project files.\n"
-                            + "Are you missing an #include, //// friend, or //// external dependency?",
+                            + "Are you missing an #include, //// friend, or //// external dependency?\n",
                         types.DiagnosticSeverity.Error, line_number, (name_start, name_end),
                         "name.unrecognized.here"
                     )
                     continue
 
             diagnose(
-                "Unrecognized identifier '{}'".format(found),
+                "Unrecognized identifier '{}'\n".format(found),
                 types.DiagnosticSeverity.Error, line_number, (name_start, name_end),
                 "name.unrecognized"
             )
+
+        # -------------------- CHECK ERROR: wrong number of function arguments --------------------
+
+        for match in st.IDENTIFIER_FUNC_REGEX.finditer(alnum_content):
+            found = match.group("name")
+
+            if found in st.BLOCK_ARGS_KEYWORDS:
+                continue
+
+            start = match.start("name")
+
+            match_scope_stack = st.find_scope_stack(scopes, start)
+            # in_function = any(is_function for _, _, is_function in match_scope_stack)
+
+            line_number = content.count("\n", 0, start)
+
+            line_begin_pos = content.rfind("\n", 0, start) + 1
+            name_start = start - line_begin_pos
+            name_end = name_start + len(found)
+
+            # this is sloppy
+            last_statement = max(
+                filtered_content.rfind(';', 0, start),
+                filtered_content.rfind('{', 0, start),
+                filtered_content.rfind('}', 0, start)
+            )
+
+            if st.FUNC_KEYWORD_REGEX.search(filtered_content[last_statement + 1:start]) is not None:
+                continue
+
+            arg_count = st.get_call_argument_info(filtered_content[match.end("name"):].lstrip())
+
+            func_params = []
+
+            found_matching_args = False
+
+            if found in engine_function_sigs:
+                # engine function call
+
+                func_matches = [
+                    engine_functions["dict"][i]
+                    for i, value in enumerate(engine_function_sigs)
+                    if value == found
+                ]
+
+                for func_match in func_matches:
+                    func_types = func_match["type"].split(" ")
+                    func_base_types = [func.split("-")[0] for func in func_types[:-1]]
+
+                    required_args = sum(1 for func in func_base_types if not func.endswith(".."))
+                    has_optional = required_args != len(func_base_types)
+
+                    func_params.append((func_base_types, required_args, has_optional))
+
+                    if ((not has_optional and arg_count == required_args)
+                        or (has_optional and arg_count >= required_args)):
+                        found_matching_args = True
+                        break
+
+            elif found in user_function_identifiers:
+                # user defined function call
+
+                func_matches = [
+                    entry for entry in user_function_entries
+                    if (entry["trigger"] == found
+                        and (entry["minimal_scope"] is None or entry["minimal_scope"] in match_scope_stack))
+                        # and st.ifdef_branches_compatible(entry["ifdef"], ifdef_branch))
+                ]
+
+                for func_match in func_matches:
+                    required_args = len(func_match["param_types"])
+
+                    func_params.append((func_match["param_types"], required_args, False))
+
+                    if arg_count == required_args:
+                        found_matching_args = True
+                        break
+
+            if len(func_params) > 0 and not found_matching_args:
+                param_info = ""
+                for func_base_types, required_args, has_optional in func_params:
+                    param_info += ("     ◦ {} arg{}: {}\n".format(
+                        str(required_args) + ("+" if has_optional else ""),
+                        "" if required_args == 1 and not has_optional else "s",
+                        func_base_types)
+                    )
+
+                diagnose(
+                    "Argument count mismatch\n  • {} valid signature{} for '{}'\n{}"
+                        .format(len(func_params), "" if len(func_params) == 1 else "s", found, param_info),
+                    types.DiagnosticSeverity.Error, line_number, (name_start, name_end),
+                    "blk.arg.mismatch"
+                )
+
+            if "//// external dependency" in content[line_begin_pos:content.find("\n", start)]:
+                continue
+
+            if len(func_params) == 0:
+                diagnose(
+                    "Identifier '{}' is not a valid function\n".format(found),
+                    types.DiagnosticSeverity.Error, line_number, (name_start, name_end),
+                    "blk.invalid"
+                )
 
 
         # -------------------- CHECK ERROR: non global definitions of @ blocks --------------------
@@ -662,6 +767,10 @@ if __name__ == "__main__":
             )
         
         return params
+
+    # @server.command("dnh-server.scan")
+    # def scan_project(ls, *args):
+    #     pass
 
 
     server.start_io()

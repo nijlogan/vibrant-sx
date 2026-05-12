@@ -75,6 +75,6 @@ def plugin_unloaded():
         unregister_plugin(_lsp_plugin_class)
 
 
-class DnhEventListener(sublime_plugin.EventListener):
-    def on_init(self, views):
-        sublime.active_window().run_command("lsp_show_diagnostics_panel")
+# class DnhEventListener(sublime_plugin.EventListener):
+#     def on_init(self, views):
+#         sublime.active_window().run_command("lsp_show_diagnostics_panel")

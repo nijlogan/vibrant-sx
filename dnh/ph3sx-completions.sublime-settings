@@ -541,7 +541,7 @@
 
         { "lang": "ph3", "sig": "BossScene::ObjEnemyBossScene_Create()", "type": "int-(boss-scene-object-id)", "doc": "Creates a Boss Scene object and returns its ID." },
         { "lang": "ph3", "sig": "BossScene::ObjEnemyBossScene_Regist(obj)", "type": "int-(boss-scene-object-id) void", "doc": "Starts the specified boss scene." },
-        { "lang": "ph3", "sig": "BossScene::ObjEnemyBossScene_Add(obj, phase, path)", "type": "int-(boss-scene-object-id) int string", "doc": "Adds the specified script to the boss scene at the specified phase." },
+        { "lang": "ph3", "sig": "BossScene::ObjEnemyBossScene_Add(obj, phase, path)", "type": "int-(boss-scene-object-id) int string void", "doc": "Adds the specified script to the boss scene at the specified phase." },
         { "lang": "ph3", "sig": "BossScene::ObjEnemyBossScene_LoadInThread(obj)", "type": "int-(boss-scene-object-id) void", "doc": "Compiles all the enemy scripts in the boss scene and initializes global variables.\nAs the length of compile time cannot be guaranteed, initialize all global variables besides constants in @Initialize." },
         { "lang": "ph3", "sig": "BossScene::ObjEnemyBossScene_GetInfo(obj, infoType)", "type": "int-(boss-scene-object-id) const-int any", "doc": "Returns boss scene info based on the info type.\n\tINFO_IS_SPELL: Returns true if a spell card is active.\n\tINFO_IS_LAST_SPELL： Returns true if the Last Spell is active.\n\tINFO_IS_DURABLE_SPELL： Returns true in the case of a survival spell.\n\tINFO_IS_LAST_STEP： Returns true when the last spell is active.\n\tINFO_TIMER： Returns the timer value in seconds.\n\tINFO_TIMERF： Returns the timer value in frames (returns -1 if unlimited).\n\tINFO_ORGTIMERF： Returns the original timer value in frames (returns -1 if unlimited).\n\tINFO_SPELL_SCORE： Returns the score of the spell card.\n\tINFO_REMAIN_STEP_COUNT： Returns the number of steps remaining in the active life phase(spell, non spell, etc).\n\tINFO_ACTIVE_STEP_LIFE_COUNT： Returns the life of the enemy for the active step.\n\tINFO_ACTIVE_STEP_TOTAL_MAX_LIFE： Returns the initial life of the enemy for the active life phase.\n\tINFO_ACTIVE_STEP_TOTAL_LIFE： Returns the total remaining life for the active life phase\n\tINFO_PLAYER_SHOOTDOWN_COUNT： Returns the amount of times the player died during the spell.\n\tINFO_PLAYER_SPELL_COUNT： Returns the amount of times the player bombed during the spell.\n\tINFO_ACTIVE_STEP_LIFE_RATE_LIST： Returns an array containing the proportion (0-1) of each step's amount of life in the active life phase." },
         { "lang": "ph3", "sig": "BossScene::ObjEnemyBossScene_SetSpellTimer(obj, time)", "type": "int-(boss-scene-object-id) real void", "doc": "Sets the timer." },
@@ -640,7 +640,7 @@
         { "lang": "ph3", "sig": "Package::SetStageMainScript(path)", "type": "string void", "doc": "Defines the stage script to be started next." },
         { "lang": "ph3", "sig": "Package::SetStagePlayerScript(path)", "type": "string void", "doc": "Defines the player script to be used in the stage.\nThis player must have been declared in the #Player header of the package.\nIf #Player is empty, you can specify all players under /script/player/folder." },
         { "lang": "ph3", "sig": "Package::SetStageReplayFile(path)", "type": "string void", "doc": "Runs the stage script once with the replay replaying all virtual key presses (including player shots, movement, etc).\nCan only be called after InitializeStageScene.\nSince the replay file holds information for each stage, in a multi-stage replay, you can begin playback from a middle stage without having to start from the first stage." },
-        { "lang": "ph3", "sig": "Package::GetStageSceneState(infoType)", "type": "const-int bool", "doc": "Returns status information about the currently running stage script.\nOnly available infotype is STAGE_STATE_FINISHED (returns true if the stage is finished)." },
+        { "lang": "ph3*", "sig": "Package::GetStageSceneState(infoType)", "type": "const-int bool", "doc": "Returns status information about the currently running stage script.\nOnly available infotype is STAGE_STATE_FINISHED (returns true if the stage is finished)." },
         { "lang": "ph3", "sig": "Package::GetStageSceneResult()", "type": "const-int", "doc": "Returns the reason why the stage script finished.\nAvailable return values are:\nSTAGE_RESULT_CLEARED (stage was cleared)\nSTAGE_RESULT_PLAYER_DOWN (player ran out of lives)\nSTAGE_RESULT_BREAK_OFF (stage ended prematurely; was terminated by player)" },
         { "lang": "ph3", "sig": "Package::PauseStageScene(pause)", "type": "bool void", "doc": "Pauses or resumes the stage script." },
         { "lang": "ph3", "sig": "Package::TerminateStageScene()", "type": "void", "doc": "Exits out of the currently running stage script." },
@@ -847,6 +847,10 @@
         { "lang": "ph3sx", "sig": "System::SetGraze()", "type": "int void", "doc": "Sets the graze count." },
         { "lang": "ph3sx", "sig": "System::SetPoint()", "type": "int void", "doc": "Sets the default point item value." },
         
+        // Package functions
+
+        { "lang": "ph3sx", "sig": "Package::GetStageSceneState()", "type": "const-int", "doc": "Returns status information about the currently running stage script.\nEither returns STAGE_STATE_FINISHED or -1." },
+
         // Archive functions
         
         { "lang": "ph3sx", "sig": "System::AddArchiveFile(path, offset)", "type": "string int bool", "doc": "Loads a .dat archive, with the added capability to specify the read offset." },
@@ -867,6 +871,7 @@
         
         { "lang": "ph3sx", "sig": "Script::GetEventArgumentCount()", "type": "int", "doc": "Returns the event argument count of the active event." },
         { "lang": "ph3sx", "sig": "Script::NotifyEvent(id, eventType, args..)", "type": "int-(script-id) const-int any.. any", "doc": "Calls the @Event of the script with the specified ID, triggering the specified event.\nThe event type may use a value greater than EV_USER.\nIt is possible to pass as many event arguments as you want, or none at all.\n*Scripts paused with PauseScript will still be able to run events." },
+        { "lang": "ph3sx", "sig": "Script::NotifyEventAll(eventType, args..)", "type": "const-int any.. void", "doc": "Calls the @Event of all scripts, triggering the specified event.\nThe event type may use a value greater than EV_USER.\nIt is possible to pass as many event arguments as you want, or none at all.\n*Scripts paused with PauseScript will still be able to run events." },
         { "lang": "ph3sx", "sig": "Script::NotifyEventOwn(eventType, args..)", "type": "const-int any.. any", "doc": "NotifyEvent's the script in which it was called.\nIt is possible to pass as many event arguments as you want, or none at all.\n*Scripts paused with PauseScript will still be able to run events." },
         
         // Matrix functions
@@ -1464,7 +1469,7 @@
 
         { "lang": "ph3sx-zlabel", "sig": "Spring::ObjSpring_Create()", "type": "int-(spring-object-id)", "doc": "Creates a spring object and returns its object ID.\nCan be used to simulate a spring mass system in both 2D and 3D." },
         // { "lang": "ph3sx-zlabel", "sig": "Spring::ObjSpring_Step(obj)", "type": "int-(spring-object-id) void", "doc": "Simulates the spring mass system for one step of delta time.\nTo simulate the system in real time, call this function once every frame." },
-        { "lang": "ph3sx-zlabel", "sig": "Spring::ObjSpring_SetGravity(obj, gravity)", "type": "int-(spring-object-id) float void", "doc": "Sets the global gravity value for the spring mass system." },
+        { "lang": "ph3sx-zlabel", "sig": "Spring::ObjSpring_SetGravity(obj, x, y, z)", "type": "int-(spring-object-id) float float float void", "doc": "Sets the global gravity value for the spring mass system." },
         { "lang": "ph3sx-zlabel", "sig": "Spring::ObjSpring_SetGlobalDrag(obj, drag)", "type": "int-(spring-object-id) float void", "doc": "Sets the global drag coefficient for the spring mass system." },
         { "lang": "ph3sx-zlabel", "sig": "Spring::ObjSpring_AddNode(obj, x, y, z, velX, velY, velZ, mass, canMove)", "type": "int-(spring-object-id) float float float float float float float bool void", "doc": "Adds a node to the spring object with the values specified.\nThe flag \"canMove\" when set to false will lock the node in place, and it can only be moved manually." },
         { "lang": "ph3sx-zlabel", "sig": "Spring::ObjSpring_SetNode(obj, nodeIndex, x, y, z, velX, velY, velZ, mass, canMove)", "type": "int-(spring-object-id) int float float float float float float float bool void", "doc": "Sets the node at the specified index in the spring object to the values specified." },
@@ -1507,6 +1512,7 @@
         { "lang": "ph3sx-zlabel", "sig": "Move::ObjMoveParent_TransferChildren(obj1, obj2)", "type": "int-(move-parent-object-id) int-(move-parent-object-id) void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Move::ObjMoveParent_SetPositionOffset(obj, x, y)", "type": "int-(move-parent-object-id) real real void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Move::ObjMoveParent_SetPositionOffsetCircle(obj, angle, radius)", "type": "int-(move-parent-object-id) real real void", "doc": "" },
+        { "lang": "ph3sx-zlabel", "sig": "Move::ObjMoveParent_SetTransformScale(obj, scale)", "type": "int-(move-parent-object-id) real void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Move::ObjMoveParent_SetTransformScale(obj, scaleX, scaleY)", "type": "int-(move-parent-object-id) real real void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Move::ObjMoveParent_SetTransformScaleX(obj, scaleX)", "type": "int-(move-parent-object-id) real void", "doc": "" },
         { "lang": "ph3sx-zlabel", "sig": "Move::ObjMoveParent_SetTransformScaleY(obj, scaleY)", "type": "int-(move-parent-object-id) real void", "doc": "" },

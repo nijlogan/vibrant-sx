@@ -191,43 +191,41 @@ def _build_completions(view, location):
         | sublime.INHIBIT_REORDER)
 
 
-def get_call_argument_info(view, name_region):
+# def get_call_argument_info(view, name_region):
+#     open_paren = name_region.end()
 
-    open_paren = name_region.end()
+#     if view.substr(open_paren) != '(':
+#         return None
 
-    if view.substr(open_paren) != '(':
-        return None
+#     depth = 0
+#     comma_count = 0
+#     i = open_paren + 1
+#     size = view.size()
 
-    depth = 0
-    comma_count = 0
-    i = open_paren + 1
-    size = view.size()
+#     while i < size:
 
-    while i < size:
+#         ch = view.substr(i)
 
-        ch = view.substr(i)
+#         if ch == '(' or ch == '[':
+#             depth += 1
 
-        if ch == '(':
-            depth += 1
+#         elif ch == ')' or ch == ']':
+#             if depth == 0:
+#                 break
+#             depth -= 1
 
-        elif ch == ')':
-            if depth == 0:
-                break
-            depth -= 1
+#         elif ch == ',' and depth == 0:
+#             comma_count += 1
 
-        elif ch == ',' and depth == 0:
-            comma_count += 1
+#         i += 1
 
-        i += 1
+#     if i == open_paren + 1:
+#         return 0
 
-    if i == open_paren + 1:
-        return 0
-
-    return comma_count + 1
+#     return comma_count + 1
 
 
 def extract_call_arguments(view, name_region):
-
     open_paren = name_region.end()
 
     if view.substr(open_paren) != '(':
@@ -243,10 +241,10 @@ def extract_call_arguments(view, name_region):
 
         ch = view.substr(i)
 
-        if ch == '(':
+        if ch == '(' or ch == '[':
             depth += 1
 
-        elif ch == ')':
+        elif ch == ')' or ch == ']':
             if depth == 0:
                 args.append(view.substr(sublime.Region(start, i)).strip())
                 break
@@ -262,6 +260,8 @@ def extract_call_arguments(view, name_region):
 
 
 def get_expression_context(view, name_region):
+    # doesn't account for multiline assignment
+
     line = view.substr(view.line(name_region))
     before = line[:name_region.begin() - view.line(name_region).begin()]
 
@@ -560,7 +560,8 @@ class DictCollector(sublime_plugin.EventListener):
         if view.match_selector(0, "source.dnh"):
             threading.Thread(target=_build_completions, args=(view, view.sel()[0].begin(),), daemon=True).start()
 
-        # view.set_status("dnh_info", "your message here")
+        else:
+            _completion_cache = None
 
 
 class DnhHoverDocs(sublime_plugin.EventListener):
@@ -615,7 +616,8 @@ class DnhHoverDocs(sublime_plugin.EventListener):
             if not matching:
                 return
 
-            arg_count = get_call_argument_info(view, word_region)
+            # arg_count = get_call_argument_info(view, word_region)
+            arg_count = st.get_call_argument_info(view.substr(sublime.Region(word_region.end(), view.size())).lstrip())
 
             if arg_count is not None:
 
@@ -692,7 +694,7 @@ class DnhHoverDocs(sublime_plugin.EventListener):
 
                 else:
                     # find match in matching with deepest scope stack
-                    deepest_match = max(matching, key=lambda m: len(m["scope_stack"]))
+                    deepest_match = max(matching, key=lambda m: len(m.get("scope_stack", [])))
                     self.show_popup(view, word_region, deepest_match)
 
 

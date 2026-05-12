@@ -1,5 +1,6 @@
 {
   "enabled": true,
   "command": ["python", "${packages}/dnh/server.pylsp"],
-  "selector": "source.dnh"
+  "selector": "source.dnh",
+  "show_diagnostics_panel_on_save": 0
 }
