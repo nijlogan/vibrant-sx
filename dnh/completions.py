@@ -65,7 +65,9 @@ def _build_completions(view, location):
 
             doc_html = "<div>{}</div>".format(doc_lines[0])
 
-            language = "<i>{}</i>".format(entry["language"])
+            language_shorthands = entry["language"].split(" ")
+
+            language = "<i>{}</i>".format(" | ".join([st.ENGINE_SHORTHANDS[l] for l in language_shorthands]))
 
             details = """
             <div>
@@ -136,7 +138,12 @@ def _build_completions(view, location):
         for non_function in st.ENGINE_NON_FUNCTIONS:
 
             name = non_function.get("sig")
-            language = non_function.get("lang", "Unspecified Language")
+
+            language = "Unspecified Language"
+            if "lang" in non_function:
+                language_shorthands = non_function["lang"].split(" ")
+                language = " | ".join([st.ENGINE_SHORTHANDS[l] for l in language_shorthands])
+
             completion = non_function.get("completion", name)
             description = non_function.get("desc", name)
 
@@ -714,32 +721,27 @@ class DnhHoverDocs(sublime_plugin.EventListener):
 
         language = entry["language"]
 
-        is_exclusive = language[-1] == '*'
-        if is_exclusive:
-            language = language[:-1]
-
         language_html = ""
 
-        if language in st.ENGINE_LANGUAGES:
-            eng_index = st.ENGINE_LANGUAGES.index(language)
-            for lan_index, lan in enumerate(st.ENGINE_LANGUAGES):
-                if lan_index < eng_index:
-                    continue
-                if is_exclusive and lan_index > eng_index:
-                    continue
-                language_html += """
-                <span style="color: {language_color};">{language}</span>
-                """.format(
-                    language_color=html.escape(language_colors.get(lan, "white")),
-                    language=html.escape(lan)
-                )
-        
-        else:
+        for language_shorthand in language.split(" "):
+
+            if language_shorthand not in st.ENGINE_SHORTHANDS:
+                continue
+
             language_html += """
-            <span style="color: {language_color};">{language}</span>
+            {separator} <span style="color: {language_color};">{displayed_language}</span>
+            """.format(
+                language_color=html.escape(language_colors.get(language_shorthand, "white")),
+                displayed_language=html.escape(st.ENGINE_SHORTHANDS[language_shorthand]),
+                separator="|" if language_html != "" else ""
+            )
+
+        if language_html == "":
+            language_html += """
+            <span style="color: {language_color};">{displayed_language}</span>
             """.format(
                 language_color=html.escape(language_colors.get(language, "white")),
-                language=html.escape(language)
+                displayed_language=html.escape(language)
             )
 
         source_html = ""
