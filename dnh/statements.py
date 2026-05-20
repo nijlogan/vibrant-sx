@@ -933,6 +933,56 @@ def preceded_by_paren_or_comma(text, pos):
     return i >= 0 and (text[i] == '(' or text[i] == ',')
 
 
+def preceded_by_any(text, pos, patterns):
+
+    last_match = None
+
+    regex = re.compile("|".join("(?:{})".format(p) for p in patterns))
+
+    for m in regex.finditer(text[:pos]):
+        last_match = m
+
+    return last_match is not None and last_match.end() == pos
+
+
+def uses_return_value(text, pos):
+
+    i = pos - 1
+
+    while i >= 0 and text[i].isspace():
+        i -= 1
+
+    if i < 0:
+        return False
+
+    operators = (
+        '~', '!', '%', '^', '&', '*', '(', '-', '+', '=',
+        '[', '|',
+        ':',
+        ',', '<', '>', '/', '?'
+    )
+
+    if text[i] in operators:
+        return True
+
+    if text[i].isalnum():
+
+        keywords = (
+            "if", "in", "ref", "return"
+        )
+
+        end = i
+
+        while i >= 0 and (text[i].isalnum()):
+            i -= 1
+
+        word = text[(i + 1):(end + 1)]
+
+        return word in keywords
+
+    return False
+
+
 def has_semicolon_outside_parens(text):
 
     depth = 0
@@ -968,14 +1018,16 @@ def compute_scope_ranges(text):
             if match and has_semicolon_outside_parens(window[match.end():]):
                 match = None
 
+            func_match = FUNC_KEYWORD_REGEX.match(match.group()) if match else None
+
             scope_start = (window_start + match.start()) if match else i
-            is_function = bool(match and FUNC_KEYWORD_REGEX.match(match.group()))
-            stack.append((scope_start, i, is_function))
+            function_label = func_match.group(1) if func_match else None
+            stack.append((scope_start, i, function_label))
 
         elif ch == "}":
             if stack:
-                start, _, is_function = stack.pop()
-                scopes.append((start, i, is_function))
+                start, _, function_label = stack.pop()
+                scopes.append((start, i, function_label))
     
     return scopes
 
@@ -983,8 +1035,8 @@ def compute_scope_ranges(text):
 def find_scope_stack(scopes, pos):
 
     return [
-        (start, end, is_function)
-        for start, end, is_function in scopes
+        (start, end, function_label)
+        for start, end, function_label in scopes
         if start < pos < end
     ]
 
@@ -1185,7 +1237,8 @@ def parse_definitions_from_content(content, pos=0, full_search=False, source_fil
             "scope_stack": function_scope_stack,
             "minimal_scope": minimal_scope,
             "ifdef": function_ifdef_branch,
-            "is_function": True
+            "is_function": True,
+            "is_isolated": True if kind in ("fcall", "tcall") else False
         }
 
         if external:

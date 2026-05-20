@@ -659,7 +659,8 @@
         // Basic Operation functions
         
         { "lang": "ph3sx", "sig": "Debug::__DEBUG_BREAK()", "type": "void", "doc": "Triggers a debug break. For developers." },
-        { "lang": "ph3sx", "sig": "Pointer::__funcptr(function, argCount)", "type": "function/subroutine/task int int-(pointer)", "doc": "Returns a pointer to the provided function, subroutine, or task." },
+        { "lang": "ph3sx", "sig": "Pointer::__funcptr(function)", "type": "function/subroutine/task int-(pointer)", "doc": "Returns a pointer to the provided function, subroutine, or task." },
+        { "lang": "ph3sx", "sig": "Pointer::__funcptr(function, argCount)", "type": "function/subroutine/task int int-(pointer)", "doc": "Returns a pointer to the provided function, subroutine, or task with the specified argument count." },
         { "lang": "ph3sx", "sig": "Pointer::invoke(funcptr, args..)", "type": "int-(pointer) any.. any", "doc": "Invokes the function associated with the provided function pointer with the provided arguments." },
         { "lang": "ph3sx", "sig": "System::wait(frames)", "type": "int void", "doc": "Pauses the execution for the given amount of frames.\nMuch faster than looping yield." },
         { "lang": "ph3sx", "sig": "Type::typeof(value)", "type": "any int", "doc": "Returns the type of the given value." },
