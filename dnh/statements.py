@@ -707,7 +707,7 @@ ENGINE_VARIABLE_SIGS = [non_func["sig"] for non_func in ENGINE_NON_FUNCTIONS if 
 
 ENGINE_AT_SIGS = [non_func["sig"] for non_func in ENGINE_NON_FUNCTIONS if non_func["kind"] == 4]
 
-VIBRANT_SX_SIGS = [non_func["sig"] for non_func in ENGINE_NON_FUNCTIONS if non_func["lang"] == "vibrant-sx"]
+VIBRANT_SX_SIGS = [non_func["sig"] for non_func in ENGINE_NON_FUNCTIONS if non_func["lang"] == "vb"]
 
 ENGINE_TRIGGERS = [
     {

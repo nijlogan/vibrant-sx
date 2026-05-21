@@ -25,42 +25,42 @@
 
         "green": "#AFFFC0",
 
-		//"fcol": "#908050",
+        //"fcol": "#908050",
         "fcol": "#90B0D0",
-		"bcol": "#181920",
+        "bcol": "#181920",
         "bcol2": "#484960",
         "bcol3": "#205030",
 
-		"terminator": "#DFDFDF",
-		"keyword": "#27D900",
+        "terminator": "#DFDFDF",
+        "keyword": "#27D900",
 
-		"var-type": "#40D0B0",
+        "var-type": "#40D0B0",
         "constant": "#FFBFCF",
-		"user-constant": "#CF4F2F",
+        "user-constant": "#CF4F2F",
         "boolean": "#BFBFFF",
-		"global-variable": "#D7FF74",
-		"param-variable": "#FF6030",
-		"block-header": "#C0E0C0",
+        "global-variable": "#D7FF74",
+        "param-variable": "#FF6030",
+        "block-header": "#C0E0C0",
         "block-header-user": "#C0B0C0",
         "block-header-bg": "#507050",
-		"task": "#6FFFB0",
-		"obj-func": "#5290DF",
-		"non-task": "#40CEDF",
+        "task": "#6FFFB0",
+        "obj-func": "#5290DF",
+        "non-task": "#40CEDF",
         "func-static": "#BF46A6",
-		"body": "#BF6686",
+        "body": "#BF6686",
         "scope": "#00F0F0",
-		"yield": "#F000F0",
+        "yield": "#F000F0",
         "docs": "#A0A070",
         "funcptr": "#FFBFFE",
     },
     "globals":
     {
-		"foreground": "var(fcol)",
-		"background": "var(bcol)",
+        "foreground": "var(fcol)",
+        "background": "var(bcol)",
         "caret": "color(var(white2) alpha(0.9))",
         "block_caret": "color(var(white2) alpha(0.2))",
         "block_caret_border": "color(var(white2) alpha(0.8))",
-        "invisibles": "color(var(white3) alpha(0.35))",
+        "invisibles": "color(var(white3) alpha(0.25))",
         "line_highlight": "var(yellow4)",
         "selection": "var(grey)",
         "selection_border": "var(black2)",
@@ -366,11 +366,11 @@
             "foreground_adjust": "l(+ 10%)"
         },
 
-		{
-			"name": "Basic Type",
-			"scope": "punctuation.terminator",
-			"foreground": "var(terminator)",
-		},
+        {
+            "name": "Basic Type",
+            "scope": "punctuation.terminator",
+            "foreground": "var(terminator)",
+        },
         {
             "name": "Keyword",
             "scope": "keyword.control",
@@ -383,7 +383,7 @@
             "foreground": "color(var(green) alpha(0.67))"
         },
 
-		// DNH Rules
+        // DNH Rules
         {
             "name": "Library Comment",
             "scope": "dnh.library-comment",
@@ -404,12 +404,12 @@
             "font_style": "italic",
             "foreground": "var(docs)"
         },
-		{
-			"name": "Basic Type",
-			"scope": "dnh.basic-type",
-			"font_style": "italic",
-			"foreground": "var(var-type)",
-		},
+        {
+            "name": "Basic Type",
+            "scope": "dnh.basic-type",
+            "font_style": "italic",
+            "foreground": "var(var-type)",
+        },
         {
             "name": "Special Type",
             "scope": "dnh.special-type",
@@ -421,33 +421,33 @@
             "scope": "dnh.constant",
             "foreground": "var(constant)",
         },
-		{
-			"name": "User Constants",
-			"scope": "dnh.user-constant",
-			"foreground": "var(user-constant)",
-		},
+        {
+            "name": "User Constants",
+            "scope": "dnh.user-constant",
+            "foreground": "var(user-constant)",
+        },
         {
             "name": "Booleans",
             "scope": "dnh.boolean",
             "foreground": "var(boolean)",
         },
-		{
-			"name": "Global Variables",
-			"scope": "dnh.global-variable",
-			"foreground": "var(global-variable)",
-		},
-		{
-			"name": "Parameter Variables",
-			"scope": "dnh.param-variable",
-			"foreground": "var(param-variable)",
-		},
-		{
-			"name": "Block Headers",
-			"scope": "dnh.block-header",
-			"font_style": "bold",
-			"foreground": "var(block-header)",
+        {
+            "name": "Global Variables",
+            "scope": "dnh.global-variable",
+            "foreground": "var(global-variable)",
+        },
+        {
+            "name": "Parameter Variables",
+            "scope": "dnh.param-variable",
+            "foreground": "var(param-variable)",
+        },
+        {
+            "name": "Block Headers",
+            "scope": "dnh.block-header",
+            "font_style": "bold",
+            "foreground": "var(block-header)",
             "background": "var(block-header-bg)",
-		},
+        },
         {
             "name": "User Defined Block Headers",
             "scope": "dnh.block-header-user",
@@ -455,27 +455,27 @@
             "foreground": "var(block-header-user)",
             "background": "var(block-header-bg)",
         },
-		{
-			"name": "Tasks",
-			"scope": "dnh.task",
-			"foreground": "var(task)",
-		},
-		{
-			"name": "Obj Functions",
-			"scope": "dnh.obj-func",
-			"foreground": "var(obj-func)",
-		},
-		{
-			"name": "Non-tasks",
-			"scope": "dnh.non-task",
-			"foreground": "var(non-task)",
-		},
-		{
-			"name": "function/task/sub/async",
-			"scope": "dnh.body",
-			"font_style": "italic",
-			"foreground": "var(body)",
-		},
+        {
+            "name": "Tasks",
+            "scope": "dnh.task",
+            "foreground": "var(task)",
+        },
+        {
+            "name": "Obj Functions",
+            "scope": "dnh.obj-func",
+            "foreground": "var(obj-func)",
+        },
+        {
+            "name": "Non-tasks",
+            "scope": "dnh.non-task",
+            "foreground": "var(non-task)",
+        },
+        {
+            "name": "function/task/sub/async",
+            "scope": "dnh.body",
+            "font_style": "italic",
+            "foreground": "var(body)",
+        },
         {
             "name": "Static function tag",
             "scope": "dnh.func-static",
@@ -487,11 +487,11 @@
             "font_style": "bold",
             "foreground": "var(scope)",
         },
-		{
-			"name": "Yield",
-			"scope": "dnh.yield",
-			"font_style": "bold",
-			"foreground": "var(yield)",
-		},
+        {
+            "name": "Yield",
+            "scope": "dnh.yield",
+            "font_style": "bold",
+            "foreground": "var(yield)",
+        },
     ]
 }
