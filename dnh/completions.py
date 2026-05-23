@@ -872,6 +872,102 @@ class DnhHoverDocs(sublime_plugin.EventListener):
         )
 
 
+HEX_REGEX = re.compile(
+    r'\b0x([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})\b'
+)
+
+
+def hex_to_css(hex_value, invert=False):
+
+    if len(hex_value) == 6:
+        r = int(hex_value[0:2], 16)
+        g = int(hex_value[2:4], 16)
+        b = int(hex_value[4:6], 16)
+        a = 1.0
+
+    else:
+        r = int(hex_value[2:4], 16)
+        g = int(hex_value[4:6], 16)
+        b = int(hex_value[6:8], 16)
+        a = int(hex_value[0:2], 16) / 255.0
+
+    r = (255 - r) if invert else r
+    g = (255 - g) if invert else g
+    b = (255 - b) if invert else b
+
+    return f"rgb({r}, {g}, {b} / {a:.3f})", r, g, b, a
+
+
+class HexColorSwatchListener(sublime_plugin.ViewEventListener):
+
+    @classmethod
+    def is_applicable(cls, settings):
+        return settings.get("syntax", "").endswith("ph3sx.sublime-syntax")
+
+    def __init__(self, view):
+        super().__init__(view)
+
+        self.phantom_set = sublime.PhantomSet(
+            view,
+            "hex_color_swatches"
+        )
+
+    def on_load_async(self):
+        self.update_swatches()
+
+    def on_modified_async(self):
+        self.update_swatches()
+
+    def on_activated_async(self):
+        self.update_swatches()
+
+    def update_swatches(self):
+
+        content = self.view.substr(sublime.Region(0, self.view.size()))
+
+        phantoms = []
+
+        for match in HEX_REGEX.finditer(content):
+
+            hex_value = match.group(1)
+
+            css, _, _, _, hex_alpha = hex_to_css(hex_value)
+            css_invert, _, _, _, _ = hex_to_css(hex_value, True)
+
+            region = sublime.Region(match.end(), match.end())
+
+            alpha_width = int(12 * hex_alpha)
+
+            html = """
+                <body>
+                    <div style="
+                        width: 12px;
+                        height: 12px;
+                        border: 1px solid #888888;
+                        padding: 2px;
+                        background-color: {css};
+                    ">
+                        <div style="
+                            width: {alpha_width}px;
+                            height: 1.5px;
+                            background-color: {css_invert};
+                        ">
+                        </div>
+                    </div>
+                </body>
+            """.format(css=css, css_invert=css_invert, alpha_width=alpha_width)
+
+            phantoms.append(
+                sublime.Phantom(
+                    region,
+                    html,
+                    sublime.LAYOUT_INLINE
+                )
+            )
+
+        self.phantom_set.update(phantoms)
+
+
 library = Library()
 
 
